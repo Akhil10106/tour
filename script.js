@@ -1,9 +1,10 @@
 /**
- * TripSplit Premium - Core Engine v3.0 (Fully Responsive)
- * Features: Real-time Sync, Smart Debt Minimization, Custom UI Notifications
+ * TripSplit Premium Core Engine v5.0
+ * Features: Adaptive UI, Greedy Debt Minimization, Real-time Firebase Sync
+ * Architecture: Event-Driven Micro-UX
  */
 
-// 1. Firebase Configuration
+// --- 1. CONFIGURATION & STATE ---
 const firebaseConfig = {
     apiKey: "AIzaSyCy5NOv_bRx8Ozbq3n5MzXz8D7cF1Piwko",
     authDomain: "services-6ce70.firebaseapp.com",
@@ -15,329 +16,463 @@ const firebaseConfig = {
     measurementId: "G-6Z4H8X4EXL"
 };
 
-// Initialize Firebase
+// Global Store
+let members = [];
+let expenses = [];
+let activeSection = 'dashboard';
+
+// Initialize Firebase with safety check
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const db = firebase.database();
 
-// --- 2. PREMIUM UI NOTIFICATION SYSTEM ---
+// --- 2. THE ADAPTIVE NAVIGATION ENGINE ---
 
-window.showToast = function(message, type = 'info') {
+/**
+ * Handles seamless transitions between different app sections
+ * with opacity fades and scroll resets.
+ */
+window.showSection = (sectionId) => {
+    const sections = document.querySelectorAll('.section-content');
+    const navLinks = document.querySelectorAll('.nav-link, .m-nav-item');
+    
+    // 1. Exit Animation
+    sections.forEach(section => {
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(10px)';
+        setTimeout(() => section.classList.add('hidden'), 200);
+    });
+
+    // 2. State Update
+    activeSection = sectionId;
+
+    // 3. Entry Animation
+    setTimeout(() => {
+        const target = document.getElementById(`${sectionId}-section`);
+        if (target) {
+            target.classList.remove('hidden');
+            // Trigger reflow
+            void target.offsetWidth; 
+            target.style.opacity = '1';
+            target.style.transform = 'translateY(0)';
+        }
+        
+        // Update Navbar Visuals
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('onclick').includes(sectionId)) {
+                link.classList.add('active');
+            }
+        });
+
+        // Dynamic Title Update
+        const titleEl = document.getElementById('section-title');
+        if (titleEl) titleEl.innerText = sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
+        
+        lucide.createIcons();
+    }, 250);
+
+    // UX: Auto-scroll to top for mobile users
+    if (window.innerWidth < 1024) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
+
+// --- 3. PREMIUM UI INTERACTIONS (MODALS & TOASTS) ---
+
+window.openModal = (id) => {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    
+    modal.style.display = 'flex';
+    // Visual Entrance
+    setTimeout(() => {
+        modal.style.opacity = '1';
+        const content = modal.querySelector('.modal-content');
+        if (content) content.style.transform = 'scale(1) translateY(0)';
+    }, 10);
+
+    // Auto-focus logic for better keyboard UX
+    const focusEl = modal.querySelector('input, select');
+    if (focusEl) setTimeout(() => focusEl.focus(), 350);
+};
+
+window.closeModal = (id) => {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+
+    modal.style.opacity = '0';
+    const content = modal.querySelector('.modal-content');
+    if (content) content.style.transform = 'scale(0.95) translateY(20px)';
+    
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+};
+
+window.showToast = (message, type = 'success') => {
     const container = document.getElementById('toast-container');
-    if (!container) return;
-
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.innerHTML = `<span>${message}</span>`;
+    
+    // Support for different icons based on type
+    const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'x-circle' : 'info');
+    toast.innerHTML = `<i data-lucide="${icon}" size="18"></i> <span>${message}</span>`;
     
     container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(50px)';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-};
-
-window.customConfirm = function(message, onConfirm) {
-    const modal = document.getElementById('custom-confirm-modal');
-    const msgEl = document.getElementById('confirm-message');
-    const proceedBtn = document.getElementById('confirm-proceed');
-    const cancelBtn = document.getElementById('confirm-cancel');
-
-    if (!modal || !msgEl) return;
-
-    msgEl.innerText = message;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    const cleanUp = () => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    };
-
-    proceedBtn.onclick = () => { onConfirm(); cleanUp(); };
-    cancelBtn.onclick = cleanUp;
-};
-
-// --- 3. RESPONSIVE NAVIGATION & MODALS ---
-
-window.toggleMobileMenu = function() {
-    const sidebar = document.getElementById('mobile-sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('hidden');
-    }
-};
-
-window.handleMobileNav = function(sectionId) {
-    window.showSection(sectionId);
-    window.toggleMobileMenu();
-};
-
-window.openModal = function(id) {
-    const m = document.getElementById(id);
-    if(m) { m.classList.remove('hidden'); m.classList.add('flex'); }
-};
-
-window.closeModal = function(id) {
-    const m = document.getElementById(id);
-    if(m) { m.classList.add('hidden'); m.classList.remove('flex'); }
-};
-
-window.showSection = function(sectionId) {
-    // Hide all sections
-    document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
-    
-    // Show Target
-    const target = document.getElementById(`${sectionId}-section`);
-    if(target) target.classList.remove('hidden');
-
-    // Update Sidebar Links (Desktop)
-    document.querySelectorAll('.nav-link').forEach(l => {
-        l.classList.remove('active', 'bg-blue-50', 'text-blue-600');
-        if(l.getAttribute('onclick').includes(sectionId)) l.classList.add('active');
-    });
-
-    // Update Mobile Links
-    document.querySelectorAll('.nav-link-mobile').forEach(l => {
-        l.classList.remove('active', 'bg-blue-50', 'text-blue-600');
-        if(l.getAttribute('onclick').includes(sectionId)) l.classList.add('active');
-    });
-
-    document.getElementById('section-title').innerText = sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
     lucide.createIcons();
+
+    // Auto-remove with exit animation
+    setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+    }, 3500);
 };
 
-// --- 4. MEMBER & EXPENSE LOGIC ---
+// --- 4. FINANCIAL CORE: THE CALCULATION ENGINE ---
 
-window.openMemberPrompt = async function() {
-    const name = prompt("Enter Member Name:");
-    if (name && name.trim() !== "") {
-        try {
-            await db.ref('members').push({
-                name: name.trim(),
-                role: 'Member',
-                joinedAt: Date.now()
-            });
-            window.showToast(`${name.trim()} added!`, 'success');
-            await logActivity(`👋 ${name.trim()} joined the trip!`);
-        } catch (e) {
-            window.showToast("Permission Denied: Set Firebase Rules to Public", 'error');
+/**
+ * Orchestrates the entire balance calculation.
+ * Uses a greedy debt minimization algorithm to simplify transactions.
+ */
+function processFinancials() {
+    let totalTripSpent = 0;
+    const netBalances = {}; 
+    const outOfPocket = {}; 
+
+    // Initialize person-specific maps
+    members.forEach(m => {
+        netBalances[m.name] = 0;
+        outOfPocket[m.name] = 0;
+    });
+
+    // Aggregate all expenses
+    expenses.forEach(exp => {
+        const amount = parseFloat(exp.amount);
+        if (isNaN(amount)) return;
+
+        totalTripSpent += amount;
+        outOfPocket[exp.paidBy] = (outOfPocket[exp.paidBy] || 0) + amount;
+
+        const share = amount / (exp.participants?.length || 1);
+        
+        // Payer is owed the full amount
+        if (netBalances.hasOwnProperty(exp.paidBy)) {
+            netBalances[exp.paidBy] += amount;
         }
+
+        // Every participant owes their share
+        exp.participants.forEach(p => {
+            if (netBalances.hasOwnProperty(p)) {
+                netBalances[p] -= share;
+            }
+        });
+    });
+
+    // Update Dashboard Metrics
+    animateCounter('total-expense-val', totalTripSpent);
+    
+    const topPayer = Object.keys(outOfPocket).reduce((a, b) => 
+        (outOfPocket[a] > outOfPocket[b]) ? a : b, '---');
+    
+    const topPayerEl = document.getElementById('top-payer-val');
+    if (topPayerEl) topPayerEl.innerText = topPayer === '---' ? 'None' : topPayer;
+
+    renderSettlements(netBalances);
+}
+
+/**
+ * DEBT MINIMIZATION ALGORITHM
+ * Reduces the number of payments needed to settle the trip.
+ */
+function renderSettlements(netBalances) {
+    const list = document.getElementById('settlement-list');
+    if (!list) return;
+
+    const debtors = [], creditors = [];
+    
+    Object.entries(netBalances).forEach(([name, balance]) => {
+        if (balance < -0.99) debtors.push({ name, amount: Math.abs(balance) });
+        else if (balance > 0.99) creditors.push({ name, amount: balance });
+    });
+
+    // Sort descending to settle largest amounts first
+    debtors.sort((a, b) => b.amount - a.amount);
+    creditors.sort((a, b) => b.amount - a.amount);
+
+    let html = '';
+    let count = 0;
+    let i = 0, j = 0;
+
+    
+
+    while (i < debtors.length && j < creditors.length) {
+        const settleAmount = Math.min(debtors[i].amount, creditors[j].amount);
+        
+        html += `
+            <div class="settle-item animate-in">
+                <div class="settle-names">
+                    <span class="debtor">${debtors[i].name}</span>
+                    <i data-lucide="chevron-right" size="14"></i>
+                    <span class="creditor">${creditors[j].name}</span>
+                </div>
+                <div class="amount-tag">₹${Math.round(settleAmount).toLocaleString('en-IN')}</div>
+            </div>`;
+        
+        debtors[i].amount -= settleAmount;
+        creditors[j].amount -= settleAmount;
+
+        if (debtors[i].amount < 1) i++;
+        if (creditors[j].amount < 1) j++;
+        count++;
     }
-};
 
-window.deleteMember = function(id, name) {
-    window.customConfirm(`Remove ${name} from the trip?`, async () => {
-        await db.ref('members').child(id).remove();
-        window.showToast(`${name} removed.`, 'info');
-    });
-};
+    list.innerHTML = html || `<div class="empty-state">
+        <i data-lucide="sun" size="32"></i>
+        <p>Everything is settled!</p>
+    </div>`;
 
-window.deleteExpense = function(id) {
-    window.customConfirm(`Delete this expense record?`, async () => {
-        await db.ref('expenses').child(id).remove();
-        window.showToast(`Expense deleted.`, 'info');
-    });
-};
+    const debtCountEl = document.getElementById('pending-settle-val');
+    if (debtCountEl) debtCountEl.innerText = count;
+    
+    lucide.createIcons();
+}
 
-// --- 5. DATA SYNC & SETTLEMENT ENGINE ---
+// --- 5. REAL-TIME DATA SYNCHRONIZATION ---
 
-let members = [];
-let expenses = [];
-
-function listenToData() {
+function startRealTimeSync() {
     // Sync Members
-    db.ref('members').on('value', (snapshot) => {
-        const data = snapshot.val();
-        members = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
-        renderMembers();
-        updateDropdowns();
-        calculateEverything();
+    db.ref('members').on('value', snap => {
+        const val = snap.val();
+        members = val ? Object.entries(val).map(([id, v]) => ({ id, ...v })) : [];
+        syncInternalUI();
     });
 
     // Sync Expenses
-    db.ref('expenses').on('value', (snapshot) => {
-        const data = snapshot.val();
-        expenses = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
-        renderExpenses();
-        calculateEverything();
+    db.ref('expenses').on('value', snap => {
+        const val = snap.val();
+        expenses = val ? Object.entries(val).map(([id, v]) => ({ id, ...v })) : [];
+        syncInternalUI();
     });
 
-    // Sync Activity
-    db.ref('activityLogs').limitToLast(12).on('value', (snapshot) => {
-        const data = snapshot.val();
+    // Sync Activity Log
+    db.ref('activityLogs').limitToLast(12).on('value', snap => {
         const feed = document.getElementById('activity-feed');
-        if(!data || !feed) return;
-        feed.innerHTML = Object.values(data).reverse().map(log => `
-            <div class="flex gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-all border-l-4 border-transparent hover:border-blue-400">
-                <div class="w-2 h-2 mt-2 bg-blue-500 rounded-full"></div>
-                <div>
-                    <p class="text-sm font-semibold text-slate-700 leading-tight">${log.text}</p>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">${new Date(log.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+        if (!feed) return;
+        const data = snap.val() ? Object.values(snap.val()).reverse() : [];
+        
+        feed.innerHTML = data.map(log => `
+            <div class="activity-node">
+                <div class="node-content">
+                    <p class="node-text">${log.text}</p>
+                    <span class="node-time">${new Date(log.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                 </div>
             </div>
         `).join('');
     });
 }
 
-function updateDropdowns() {
+function syncInternalUI() {
+    // 1. Update Input Selections
     const payerSelect = document.getElementById('exp-payer');
-    const splitDiv = document.getElementById('split-participants');
-    if(!payerSelect || !splitDiv) return;
-
-    payerSelect.innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-    splitDiv.innerHTML = members.map(m => `
-        <label class="flex items-center gap-2 p-3 hover:bg-white rounded-xl cursor-pointer transition-all border border-transparent hover:border-slate-100">
-            <input type="checkbox" value="${m.name}" checked class="w-5 h-5 rounded text-blue-600 border-slate-300">
-            <span class="text-sm font-semibold text-slate-600">${m.name}</span>
-        </label>
-    `).join('');
-}
-
-function calculateEverything() {
-    let total = 0;
-    const netBalances = {};
-    const payerMap = {};
-
-    members.forEach(m => {
-        netBalances[m.name] = 0;
-        payerMap[m.name] = 0;
-    });
-
-    expenses.forEach(exp => {
-        const amt = parseFloat(exp.amount);
-        total += amt;
-        payerMap[exp.paidBy] = (payerMap[exp.paidBy] || 0) + amt;
-
-        const share = amt / exp.participants.length;
-        if(netBalances.hasOwnProperty(exp.paidBy)) netBalances[exp.paidBy] += amt;
-        exp.participants.forEach(p => {
-            if(netBalances.hasOwnProperty(p)) netBalances[p] -= share;
-        });
-    });
-
-    // Dashboard Totals
-    document.getElementById('total-expense-val').innerText = `₹${total.toLocaleString('en-IN')}`;
-    const topPayer = Object.keys(payerMap).reduce((a, b) => payerMap[a] > payerMap[b] ? a : b, '---');
-    document.getElementById('top-payer-val').innerText = topPayer === '---' ? '---' : topPayer;
+    const splitContainer = document.getElementById('split-participants');
     
-    renderSettlements(netBalances);
-}
-
-function renderSettlements(netBalances) {
-    const list = document.getElementById('settlement-list');
-    if(!list) return;
-    
-    const debtors = [], creditors = [];
-    Object.entries(netBalances).forEach(([name, bal]) => {
-        if (bal < -0.9) debtors.push({ name, bal: Math.abs(bal) });
-        else if (bal > 0.9) creditors.push({ name, bal });
-    });
-
-    debtors.sort((a,b) => b.bal - a.bal);
-    creditors.sort((a,b) => b.bal - a.bal);
-
-    let html = '';
-    let i = 0, j = 0, count = 0;
-
-    while(i < debtors.length && j < creditors.length) {
-        const amount = Math.min(debtors[i].bal, creditors[j].bal);
-        html += `
-            <div class="flex items-center justify-between p-5 bg-white rounded-3xl border border-slate-100 shadow-sm animate-in slide-in-from-bottom-2 duration-300">
-                <div class="flex items-center gap-3">
-                    <span class="font-bold text-slate-700">${debtors[i].name}</span>
-                    <div class="flex flex-col items-center">
-                        <i data-lucide="arrow-right" class="w-4 h-4 text-blue-500"></i>
-                    </div>
-                    <span class="font-bold text-slate-700">${creditors[j].name}</span>
-                </div>
-                <span class="text-lg font-black text-blue-600">₹${Math.round(amount)}</span>
-            </div>`;
-        debtors[i].bal -= amount;
-        creditors[j].bal -= amount;
-        if(debtors[i].bal < 0.1) i++;
-        if(creditors[j].bal < 0.1) j++;
-        count++;
+    if (payerSelect) {
+        payerSelect.innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
     }
 
-    list.innerHTML = html || '<div class="text-center py-10 text-slate-400 font-medium">All settled up! 🌴</div>';
-    document.getElementById('pending-settle-val').innerText = count;
-    lucide.createIcons();
-}
-
-// --- 6. FORM HANDLERS & RENDERING ---
-
-function renderMembers() {
-    const grid = document.getElementById('members-grid');
-    if(!grid) return;
-    grid.innerHTML = members.map(m => `
-        <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-500 text-white rounded-2xl flex items-center justify-center font-black shadow-lg shadow-blue-100">
-                    ${m.name.charAt(0).toUpperCase()}
+    if (splitContainer) {
+        splitContainer.innerHTML = members.map(m => `
+            <label class="custom-checkbox">
+                <input type="checkbox" value="${m.name}" checked>
+                <div class="checkbox-tile">
+                    <span>${m.name}</span>
                 </div>
-                <h4 class="font-bold text-slate-800">${m.name}</h4>
-            </div>
-            <button onclick="deleteMember('${m.id}', '${m.name}')" class="opacity-0 group-hover:opacity-100 text-red-400 p-2 hover:bg-red-50 rounded-xl transition-all">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-        </div>`).join('');
-    lucide.createIcons();
+            </label>
+        `).join('');
+    }
+
+    // 2. Refresh Calculations
+    processFinancials();
+
+    // 3. Render Lists
+    renderExpensesTable();
+    renderMembersGrid();
 }
 
-function renderExpenses() {
+// --- 6. TABLE & LIST RENDERING ---
+
+function renderExpensesTable() {
     const tbody = document.getElementById('expenses-tbody');
-    if(!tbody) return;
-    tbody.innerHTML = expenses.length ? expenses.map(exp => `
-        <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-            <td class="p-5 font-bold text-slate-800">${exp.title}</td>
-            <td class="p-5 text-slate-500 font-medium">${exp.paidBy}</td>
-            <td class="p-5 font-black text-slate-700 text-lg">₹${exp.amount}</td>
-            <td class="p-5">
-                <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">${exp.category}</span>
+    if (!tbody) return;
+
+    if (expenses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-table">No expenses found for this trip.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = expenses.map(e => `
+        <tr class="table-row-hover">
+            <td>
+                <div class="bill-info">
+                    <span class="bill-title">${e.title}</span>
+                    <span class="bill-date">${new Date(e.time || Date.now()).toLocaleDateString()}</span>
+                </div>
             </td>
-            <td class="p-5 text-right">
-                <button onclick="deleteExpense('${exp.id}')" class="text-slate-300 hover:text-red-500 transition-colors">
-                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+            <td class="hide-mobile">${e.paidBy}</td>
+            <td class="bill-amount">₹${parseFloat(e.amount).toLocaleString('en-IN')}</td>
+            <td><span class="badge badge-${e.category?.toLowerCase() || 'misc'}">${e.category}</span></td>
+            <td class="action-cell">
+                <button class="icon-btn delete" onclick="triggerDelete('expenses', '${e.id}', '${e.title}')">
+                    <i data-lucide="trash-2" size="18"></i>
                 </button>
             </td>
-        </tr>`).join('') : `<tr><td colspan="5" class="p-10 text-center text-slate-400">No expenses found.</td></tr>`;
+        </tr>
+    `).join('');
     lucide.createIcons();
 }
 
-const expenseForm = document.getElementById('expense-form');
-if(expenseForm) {
-    expenseForm.onsubmit = async (e) => {
-        e.preventDefault();
-        const title = document.getElementById('exp-title').value;
-        const amount = parseFloat(document.getElementById('exp-amount').value);
-        const paidBy = document.getElementById('exp-payer').value;
-        const category = document.getElementById('exp-category').value;
-        const participants = Array.from(document.querySelectorAll('#split-participants input:checked')).map(i => i.value);
+function renderMembersGrid() {
+    const grid = document.getElementById('members-grid');
+    if (!grid) return;
 
-        if(!paidBy || participants.length === 0) return window.showToast("Select members first!", "error");
+    grid.innerHTML = members.map(m => `
+        <div class="stat-card member-card animate-in">
+            <div class="member-profile">
+                <div class="member-avatar">${m.name[0].toUpperCase()}</div>
+                <div class="member-meta">
+                    <span class="member-name">${m.name}</span>
+                    <span class="member-role">Traveler</span>
+                </div>
+            </div>
+            <button class="icon-btn delete" onclick="triggerDelete('members', '${m.id}', '${m.name}')">
+                <i data-lucide="user-minus" size="18"></i>
+            </button>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
 
-        try {
-            await db.ref('expenses').push({ title, amount, paidBy, category, participants, timestamp: Date.now() });
-            window.showToast("Bill recorded!", "success");
-            await logActivity(`💰 ${paidBy} paid ₹${amount} for ${title}`);
-            window.closeModal('expenseModal');
-            expenseForm.reset();
-        } catch (err) { window.showToast("Sync Error", "error"); }
+// --- 7. DATABASE MODIFICATION HANDLERS ---
+
+window.openMemberPrompt = () => {
+    const input = document.getElementById('new-member-name');
+    if (input) input.value = '';
+    openModal('memberModal');
+};
+
+window.submitNewMember = async () => {
+    const nameInput = document.getElementById('new-member-name');
+    const name = nameInput.value.trim();
+
+    if (!name) {
+        showToast("Please enter a valid name", "error");
+        return;
+    }
+
+    try {
+        const newRef = db.ref('members').push();
+        await newRef.set({ name, joinedAt: Date.now() });
+        
+        await db.ref('activityLogs').push({
+            text: `👋 ${name} was added to the trip`,
+            time: Date.now()
+        });
+
+        closeModal('memberModal');
+        showToast(`${name} added successfully!`);
+    } catch (err) {
+        showToast("Sync failed. Check connection.", "error");
+    }
+};
+
+document.getElementById('expense-form').onsubmit = async (e) => {
+    e.preventDefault();
+    
+    const title = document.getElementById('exp-title').value;
+    const amount = document.getElementById('exp-amount').value;
+    const paidBy = document.getElementById('exp-payer').value;
+    const category = document.getElementById('exp-category').value;
+    const participants = Array.from(document.querySelectorAll('#split-participants input:checked')).map(i => i.value);
+
+    if (participants.length === 0) {
+        showToast("Select at least one participant", "error");
+        return;
+    }
+
+    try {
+        await db.ref('expenses').push({
+            title, amount, paidBy, category, participants, time: Date.now()
+        });
+
+        await db.ref('activityLogs').push({
+            text: `💰 ${paidBy} paid ₹${amount} for ${title}`,
+            time: Date.now()
+        });
+
+        closeModal('expenseModal');
+        e.target.reset();
+        showToast("Expense recorded!");
+    } catch (err) {
+        showToast("Error saving expense", "error");
+    }
+};
+
+window.triggerDelete = (path, id, label) => {
+    const modal = document.getElementById('custom-confirm-modal');
+    const msg = document.getElementById('confirm-message');
+    msg.innerText = `Are you sure you want to remove "${label}"? This cannot be undone.`;
+    
+    modal.style.display = 'flex';
+    
+    document.getElementById('confirm-proceed').onclick = async () => {
+        await db.ref(path).child(id).remove();
+        modal.style.display = 'none';
+        showToast("Item deleted", "success");
     };
+    
+    document.getElementById('confirm-cancel').onclick = () => {
+        modal.style.display = 'none';
+    };
+};
+
+// --- 8. UTILITIES & STARTUP ---
+
+function animateCounter(id, target) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    const startValue = parseInt(el.innerText.replace(/\D/g, '')) || 0;
+    const duration = 1000;
+    const startTime = performance.now();
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth stop
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(easeOut * (target - startValue) + startValue);
+        
+        el.innerText = `₹${current.toLocaleString('en-IN')}`;
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+    requestAnimationFrame(update);
 }
 
-async function logActivity(text) {
-    await db.ref('activityLogs').push({ text, time: Date.now() });
-}
-
-// --- 7. STARTUP ---
-
+// Global Startup
 window.onload = () => {
     lucide.createIcons();
-    listenToData();
-    // Default start
-    window.showSection('dashboard');
+    startRealTimeSync();
+    
+    // Default Start Section
+    showSection('dashboard');
+    
+    // Console Welcome for Developers
+    console.log("%c TripSplit Premium v5.0 Loaded ", "background: #2563eb; color: white; padding: 5px; border-radius: 5px;");
 };
