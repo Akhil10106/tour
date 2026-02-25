@@ -3,92 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TripSplit | Advanced Expense Manager</title>
+    <title>TripSplit | Premium Animated Ledger</title>
     
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
-        /* --- FULL BUILT-IN PREMIUM CSS --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-        :root { --primary: #2563eb; --primary-light: #eff6ff; --bg: #f8fafc; --text: #1e293b; --text-light: #64748b; }
+        /* --- HIGH-END ANIMATED CSS --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; }
+        :root { 
+            --primary: #2563eb; 
+            --primary-glow: rgba(37, 99, 235, 0.2);
+            --bg: #f8fafc; 
+            --card: #ffffff;
+            --text: #0f172a;
+        }
         
-        body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; flex-direction: column; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* Sidebar Animation */
+        .sidebar { 
+            width: 280px; background: white; border-right: 1px solid #e2e8f0; 
+            position: fixed; height: 100vh; padding: 2rem; z-index: 100;
+            animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .logo { 
+            display: flex; align-items: center; gap: 12px; font-size: 1.6rem; 
+            font-weight: 800; margin-bottom: 3rem; color: var(--text);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .logo-box { 
+            background: var(--primary); color: white; padding: 10px; 
+            border-radius: 12px; animation: pulseGlow 2s infinite; 
+        }
+
+        /* Nav Item Animations */
+        .nav-item { 
+            display: flex; align-items: center; gap: 12px; padding: 14px 18px; 
+            border-radius: 16px; cursor: pointer; color: #64748b; font-weight: 600; 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 10px; 
+            border: none; background: none; width: 100%;
+        }
+        .nav-item:hover { 
+            background: var(--bg); color: var(--primary); 
+            transform: translateX(8px);
+        }
+        .nav-item.active { background: #eff6ff; color: var(--primary); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); }
+
+        /* Main Workspace */
+        .main-content { margin-left: 280px; padding: 4rem; flex: 1; }
+
+        /* Header Animations */
+        header h1 { 
+            font-size: 2.8rem; font-weight: 900; letter-spacing: -0.04em;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Stats Card Animations */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 2.5rem; }
         
-        /* Sidebar */
-        .sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; position: fixed; height: 100vh; padding: 2rem; z-index: 100; }
-        .logo { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: 3rem; }
-        .logo-box { background: var(--primary); color: white; padding: 8px; border-radius: 10px; display: flex; }
-        
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; cursor: pointer; color: var(--text-light); font-weight: 600; transition: 0.3s; margin-bottom: 8px; border: none; background: none; width: 100%; text-align: left; }
-        .nav-item:hover { background: var(--bg); color: var(--primary); }
-        .nav-item.active { background: var(--primary-light); color: var(--primary); }
+        .stat-card { 
+            background: white; padding: 2rem; border-radius: 32px; border: 1px solid #f1f5f9; 
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.03); 
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: fadeInUp 0.8s backwards;
+        }
+        .stat-card:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 20px 40px rgba(0,0,0,0.06); border-color: var(--primary); }
 
-        /* Main Content */
-        .main-content { margin-left: 260px; padding: 3rem; flex: 1; width: calc(100% - 260px); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-        .btn { padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; border: none; display: flex; align-items: center; gap: 8px; }
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2); }
-        .btn-white { background: white; border: 1px solid #e2e8f0; color: var(--text); }
-        .btn:active { transform: scale(0.95); }
+        /* Staggered load animation for cards */
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
 
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
-        .stat-card { background: white; padding: 1.5rem; border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .stat-label { color: var(--text-light); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
-        .stat-value { font-size: 2rem; font-weight: 900; color: var(--text); }
+        @keyframes fadeInUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
 
-        /* Dashboard Bottom Grid */
-        .dashboard-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 1.5rem; }
-        .panel { background: white; padding: 2rem; border-radius: 30px; border: 1px solid #f1f5f9; }
-        .panel-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        /* Pulsing Value Effect */
+        #total-val { animation: softTextGlow 3s infinite alternate; }
+        @keyframes softTextGlow {
+            from { text-shadow: 0 0 0px var(--primary-glow); }
+            to { text-shadow: 0 0 20px var(--primary-glow); color: var(--primary); }
+        }
 
-        /* Settlements & List */
-        .settle-item { background: var(--bg); padding: 1rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border: 1px solid #f1f5f9; }
-        .debtor-info { font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
-        .amount-tag { font-weight: 900; color: var(--primary); font-size: 1.1rem; }
+        /* Lists & Panels */
+        .dashboard-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 2.5rem; margin-top: 3rem; }
+        .panel { 
+            background: white; padding: 2.5rem; border-radius: 40px; 
+            border: 1px solid #f1f5f9; animation: fadeIn 1s ease-out;
+        }
 
-        /* Table */
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 1rem; color: var(--text-light); font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; }
-        td { padding: 1.25rem 1rem; border-bottom: 1px solid #f8fafc; font-weight: 600; }
-        .category-badge { padding: 4px 12px; background: var(--primary-light); color: var(--primary); border-radius: 20px; font-size: 0.7rem; font-weight: 800; }
+        /* Settle Items List Animation */
+        .settle-item { 
+            background: #f8fafc; padding: 1.25rem; border-radius: 20px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 1rem; border: 1px solid transparent;
+            transition: all 0.3s ease; animation: slideInRight 0.5s ease-out backwards;
+        }
+        .settle-item:hover { transform: scale(1.03); background: white; border-color: var(--primary); box-shadow: 0 10px 20px rgba(0,0,0,0.04); }
 
-        /* Modals */
-        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 1.5rem; }
-        .modal-content { background: white; width: 100%; max-width: 500px; padding: 2.5rem; border-radius: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-        .input-group { margin-bottom: 1.25rem; }
-        .input-group label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; margin-bottom: 0.5rem; }
-        input, select { width: 100%; padding: 12px; background: var(--bg); border: 1px solid #e2e8f0; border-radius: 12px; font-size: 1rem; font-weight: 600; outline: none; }
-        input:focus { border-color: var(--primary); }
+        @keyframes slideInRight {
+            from { transform: translateX(30px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
 
-        /* Toast */
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; }
-        .toast { background: white; padding: 1rem 1.5rem; border-radius: 16px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); border-left: 5px solid var(--primary); margin-bottom: 10px; font-weight: 700; animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        /* Buttons */
+        .btn { 
+            padding: 14px 28px; border-radius: 18px; font-weight: 700; cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: none; 
+            display: flex; align-items: center; gap: 10px; position: relative; overflow: hidden;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { box-shadow: 0 15px 30px var(--primary-glow); transform: translateY(-3px); }
+        .btn:active { transform: scale(0.92); }
 
-        /* Mobile Adjustments */
-        .mobile-header { display: none; background: white; padding: 1rem; border-bottom: 1px solid #e2e8f0; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 200; }
-        @media (max-width: 768px) {
+        /* Modal Animation */
+        .modal { 
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); 
+            backdrop-filter: blur(12px); z-index: 1000; display: none; 
+            align-items: center; justify-content: center; padding: 1rem;
+        }
+        .modal-content { 
+            background: white; width: 100%; max-width: 520px; padding: 3rem; 
+            border-radius: 40px; box-shadow: 0 40px 100px rgba(0,0,0,0.2);
+            animation: modalZoom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalZoom {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        /* Toast Animation */
+        .toast { 
+            background: white; padding: 1.25rem 2rem; border-radius: 24px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); border-left: 8px solid var(--primary); 
+            margin-bottom: 12px; font-weight: 800; animation: toastSlide 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        @keyframes toastSlide {
+            from { transform: translateX(120%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+
+        @media (max-width: 1024px) {
             .sidebar { display: none; }
-            .mobile-header { display: flex; }
-            .main-content { margin-left: 0; padding: 1.5rem; width: 100%; }
+            .main-content { margin-left: 0; padding: 2rem; }
             .dashboard-grid { grid-template-columns: 1fr; }
-            .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <div id="toast-container"></div>
+    <div id="toast-container" style="position: fixed; top: 30px; right: 30px; z-index: 2000;"></div>
 
-    <div class="mobile-header">
-        <div class="logo" style="margin-bottom: 0;"><div class="logo-box"><i data-lucide="plane" size="20"></i></div> TripSplit</div>
-        <button class="btn btn-white" onclick="toggleMobileMenu()"><i data-lucide="menu"></i></button>
-    </div>
-
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar">
         <div class="logo"><div class="logo-box"><i data-lucide="plane"></i></div> TripSplit</div>
         <button class="nav-item active" onclick="showSection('dashboard', this)"><i data-lucide="layout-grid"></i> Dashboard</button>
         <button class="nav-item" onclick="showSection('expenses', this)"><i data-lucide="receipt"></i> Expenses</button>
@@ -96,97 +185,96 @@
     </aside>
 
     <main class="main-content">
-        <header class="header">
+        <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
             <div>
-                <h1 id="page-title" style="font-size: 2.25rem; font-weight: 900; letter-spacing: -0.02em;">Dashboard</h1>
-                <p id="page-desc" style="color: var(--text-light); font-weight: 600;">Real-time Trip Ledger</p>
+                <h1 id="page-title">Dashboard</h1>
+                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Live syncing with Group Ledger</p>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-white" onclick="openMemberPrompt()">+ Member</button>
-                <button class="btn btn-primary" onclick="openModal('expenseModal')"><i data-lucide="plus"></i> Expense</button>
+            <div style="display: flex; gap: 12px;">
+                <button class="btn" style="background: white; border: 1px solid #e2e8f0;" onclick="openMemberPrompt()">+ Add Member</button>
+                <button class="btn btn-primary" onclick="openModal('expenseModal')"><i data-lucide="plus"></i> New Expense</button>
             </div>
         </header>
 
-        <section id="dashboard-section" class="section-content">
+        <section id="dashboard-section">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <p class="stat-label">Total Spent</p>
+                    <p style="color: #94a3b8; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px;">Total Expenditure</p>
                     <div class="stat-value" id="total-val">₹0</div>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label" style="color: #10b981;">Top Payer</p>
-                    <div class="stat-value" id="top-payer-val" style="font-size: 1.5rem;">---</div>
+                    <p style="color: #10b981; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px;">The MVP (Top Payer)</p>
+                    <div class="stat-value" id="top-payer-val" style="font-size: 1.6rem;">---</div>
                 </div>
                 <div class="stat-card">
-                    <p class="stat-label" style="color: var(--primary);">Open Debts</p>
+                    <p style="color: #f59e0b; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px;">Pending Settlements</p>
                     <div class="stat-value" id="debt-count-val">0</div>
                 </div>
             </div>
 
             <div class="dashboard-grid">
                 <div class="panel">
-                    <div class="panel-title"><i data-lucide="zap" style="color: #f59e0b;"></i> Smart Settlement</div>
+                    <h3 style="font-weight: 800; font-size: 1.4rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="sparkles" style="color: #f59e0b;"></i> Smart Settlement Engine
+                    </h3>
                     <div id="settlement-list"></div>
                 </div>
                 <div class="panel">
-                    <div class="panel-title"><i data-lucide="activity"></i> Recent Log</div>
-                    <div id="activity-feed" style="font-size: 0.9rem; font-weight: 600; color: var(--text-light);"></div>
+                    <h3 style="font-weight: 800; font-size: 1.4rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="zap" style="color: #2563eb;"></i> Live Activity
+                    </h3>
+                    <div id="activity-feed" style="display: flex; flex-direction: column; gap: 15px;"></div>
                 </div>
             </div>
         </section>
 
-        <section id="expenses-section" class="section-content" style="display: none;">
-            <div class="panel" style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr><th>Description</th><th>Payer</th><th>Amount</th><th>Category</th><th></th></tr>
+        <section id="expenses-section" style="display: none; margin-top: 3rem;">
+            <div class="panel">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="text-align: left; color: #94a3b8; font-size: 0.75rem; border-bottom: 2px solid #f8fafc;">
+                        <tr><th style="padding-bottom: 1rem;">BILL INFO</th><th style="padding-bottom: 1rem;">PAID BY</th><th style="padding-bottom: 1rem;">AMOUNT</th><th style="padding-bottom: 1rem;"></th></tr>
                     </thead>
                     <tbody id="expenses-tbody"></tbody>
                 </table>
             </div>
         </section>
 
-        <section id="members-section" class="section-content" style="display: none;">
+        <section id="members-section" style="display: none; margin-top: 3rem;">
             <div class="stats-grid" id="members-grid"></div>
         </section>
     </main>
 
     <div class="modal" id="expenseModal">
         <div class="modal-content">
-            <h2 style="font-weight: 900; margin-bottom: 1.5rem;">New Expense</h2>
+            <h2 style="font-weight: 900; font-size: 2rem; margin-bottom: 2rem;">Add Bill</h2>
             <form id="expense-form">
-                <div class="input-group">
-                    <label>Description</label>
-                    <input type="text" id="exp-title" placeholder="e.g. Flight Tickets" required>
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Description</label>
+                    <input type="text" id="exp-title" placeholder="e.g. Starbucks Dinner" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; font-weight: 600;" required>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <label>Amount (₹)</label>
-                        <input type="number" id="exp-amount" placeholder="0.00" required>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1.5rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Amount (₹)</label>
+                        <input type="number" id="exp-amount" placeholder="0.00" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; font-weight: 800;" required>
                     </div>
-                    <div class="input-group" style="margin-bottom: 0;">
-                        <label>Category</label>
-                        <select id="exp-category"><option>Food</option><option>Travel</option><option>Hotel</option><option>Misc</option></select>
+                    <div>
+                        <label style="display: block; font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Payer</label>
+                        <select id="exp-payer" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; font-weight: 700; background: white;"></select>
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Paid By</label>
-                    <select id="exp-payer"></select>
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 12px;">Split with members</label>
+                    <div id="split-participants" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: #f8fafc; border-radius: 20px;"></div>
                 </div>
-                <div class="input-group">
-                    <label>Split With (Check Participants)</label>
-                    <div id="split-participants" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; background: var(--bg); border-radius: 12px; max-height: 100px; overflow-y: auto;"></div>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 2rem;">
-                    <button type="button" class="btn btn-white" style="flex: 1; justify-content: center;" onclick="closeModal('expenseModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">Save Expense</button>
+                <div style="display: flex; gap: 15px;">
+                    <button type="button" class="btn" style="flex: 1; justify-content: center; background: #f1f5f9; color: #64748b;" onclick="closeModal('expenseModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 2; justify-content: center;">Add Record</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        /* --- CORE LOGIC --- */
         const firebaseConfig = {
             apiKey: "AIzaSyCy5NOv_bRx8Ozbq3n5MzXz8D7cF1Piwko",
             authDomain: "services-6ce70.firebaseapp.com",
@@ -202,19 +290,13 @@
         const db = firebase.database();
         let members = [], expenses = [];
 
-        // UI Engine
         window.showSection = (id, el) => {
-            document.querySelectorAll('.section-content').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
             document.getElementById(`${id}-section`).style.display = 'block';
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             if(el) el.classList.add('active');
             document.getElementById('page-title').innerText = id.charAt(0).toUpperCase() + id.slice(1);
-            if(window.innerWidth <= 768) document.getElementById('sidebar').style.display = 'none';
-        };
-
-        window.toggleMobileMenu = () => {
-            const s = document.getElementById('sidebar');
-            s.style.display = (s.style.display === 'block') ? 'none' : 'block';
+            lucide.createIcons();
         };
 
         window.openModal = (id) => document.getElementById(id).style.display = 'flex';
@@ -225,97 +307,80 @@
             t.className = 'toast';
             t.innerText = msg;
             document.getElementById('toast-container').appendChild(t);
-            setTimeout(() => t.remove(), 3000);
+            setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 500); }, 3000);
         };
 
-        // Firebase Sync
-        const initSync = () => {
+        const sync = () => {
             db.ref('members').on('value', snap => {
                 members = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({id, ...v})) : [];
-                renderMembers(); updateUI();
+                renderMembers(); refreshUI();
             });
             db.ref('expenses').on('value', snap => {
                 expenses = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({id, ...v})) : [];
-                renderExpenses(); updateUI();
+                renderExpenses(); refreshUI();
             });
-            db.ref('activityLogs').limitToLast(5).on('value', snap => {
+            db.ref('activityLogs').limitToLast(6).on('value', snap => {
                 const logs = snap.val() ? Object.values(snap.val()).reverse() : [];
-                document.getElementById('activity-feed').innerHTML = logs.map(l => `<p style="margin-bottom:10px;">• ${l.text}</p>`).join('');
+                document.getElementById('activity-feed').innerHTML = logs.map(l => `<div style="animation: slideInRight 0.5s ease-out backwards;">• ${l.text}</div>`).join('');
             });
         };
 
-        const updateUI = () => {
-            // Update Dropdowns
-            const payerSelect = document.getElementById('exp-payer');
-            payerSelect.innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-            
-            const splitDiv = document.getElementById('split-participants');
-            splitDiv.innerHTML = members.map(m => `
-                <label style="display:flex; align-items:center; gap:5px; font-size:0.8rem; font-weight:700;">
-                    <input type="checkbox" value="${m.name}" checked> ${m.name}
-                </label>
+        const refreshUI = () => {
+            document.getElementById('exp-payer').innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+            document.getElementById('split-participants').innerHTML = members.map(m => `
+                <label style="display: flex; gap: 8px; font-weight: 700; cursor:pointer;"><input type="checkbox" value="${m.name}" checked> ${m.name}</label>
             `).join('');
 
-            // Calculations
             let total = 0; const bal = {}, spend = {};
             members.forEach(m => { bal[m.name] = 0; spend[m.name] = 0; });
-
             expenses.forEach(e => {
                 const a = parseFloat(e.amount); total += a;
                 spend[e.paidBy] += a;
-                const share = a / e.participants.length;
+                const s = a / e.participants.length;
                 bal[e.paidBy] += a;
-                e.participants.forEach(p => { if(bal.hasOwnProperty(p)) bal[p] -= share; });
+                e.participants.forEach(p => { if(bal.hasOwnProperty(p)) bal[p] -= s; });
             });
 
             document.getElementById('total-val').innerText = `₹${total.toLocaleString()}`;
             const top = Object.keys(spend).reduce((a,b) => spend[a] > spend[b] ? a : b, '---');
             document.getElementById('top-payer-val').innerText = top;
 
-            // Settlements
             const list = document.getElementById('settlement-list');
             const d = [], c = [];
-            Object.entries(bal).forEach(([n, b]) => {
-                if(b < -1) d.push({n, b: Math.abs(b)}); else if(b > 1) c.push({n, b});
-            });
-
+            Object.entries(bal).forEach(([n, b]) => { if(b < -1) d.push({n, b: Math.abs(b)}); else if(b > 1) c.push({n, b}); });
             let html = '', count = 0;
-            d.sort((a,b) => b.b - a.b); c.sort((a,b) => b.b - a.b);
+            d.sort((a,b)=>b.b-a.b); c.sort((a,b)=>b.b-a.b);
             let i=0, j=0;
-            while(i < d.length && j < c.length) {
+            while(i<d.length && j<c.length) {
                 const amt = Math.min(d[i].b, c[j].b);
-                html += `<div class="settle-item">
-                    <div class="debtor-info">${d[i].n} <i data-lucide="arrow-right" size="14"></i> ${c[j].n}</div>
-                    <div class="amount-tag">₹${Math.round(amt)}</div>
+                html += `<div class="settle-item" style="animation-delay: ${count*0.1}s">
+                    <span class="font-bold">${d[i].n} <i data-lucide="arrow-right" style="vertical-align: middle;"></i> ${c[j].n}</span>
+                    <span style="font-weight: 900; color: #2563eb;">₹${Math.round(amt)}</span>
                 </div>`;
-                d[i].b -= amt; c[j].b -= amt;
-                if(d[i].b < 1) i++; if(c[j].b < 1) j++; count++;
+                d[i].b -= amt; c[j].b -= amt; if(d[i].b < 1) i++; if(c[j].b < 1) j++; count++;
             }
-            list.innerHTML = html || '<p style="text-align:center; color:#cbd5e1; padding:2rem;">All clear!</p>';
+            list.innerHTML = html || '<div style="text-align:center; color:#94a3b8; padding:3rem;">No debts. You are all square! 🌴</div>';
             document.getElementById('debt-count-val').innerText = count;
             lucide.createIcons();
         };
 
         const renderMembers = () => {
-            document.getElementById('members-grid').innerHTML = members.map(m => `
-                <div class="stat-card" style="display:flex; justify-content:space-between; align-items:center;">
+            document.getElementById('members-grid').innerHTML = members.map((m, idx) => `
+                <div class="stat-card" style="display:flex; justify-content:space-between; animation-delay: ${idx*0.1}s">
                     <span style="font-weight:800;">${m.name}</span>
-                    <button onclick="db.ref('members').child('${m.id}').remove()" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i data-lucide="trash-2" size="18"></i></button>
-                </div>
-            `).join('');
+                    <button onclick="db.ref('members').child('${m.id}').remove()" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i data-lucide="trash-2"></i></button>
+                </div>`).join('');
             lucide.createIcons();
         };
 
         const renderExpenses = () => {
-            document.getElementById('expenses-tbody').innerHTML = expenses.map(e => `
-                <tr>
-                    <td style="font-weight:800;">${e.title}</td>
+            document.getElementById('expenses-tbody').innerHTML = expenses.map((e, idx) => `
+                <tr style="animation: fadeIn 0.5s ease-out backwards; animation-delay: ${idx*0.05}s">
+                    <td style="padding: 1.5rem 0; font-weight: 800;">${e.title}</td>
                     <td>${e.paidBy}</td>
-                    <td style="font-weight:900; color:var(--primary);">₹${e.amount}</td>
-                    <td><span class="category-badge">${e.category}</span></td>
+                    <td style="font-weight: 900; color: #2563eb;">₹${e.amount}</td>
                     <td style="text-align:right;"><button onclick="db.ref('expenses').child('${e.id}').remove()" style="color:#cbd5e1; border:none; background:none; cursor:pointer;"><i data-lucide="x-circle"></i></button></td>
-                </tr>
-            `).join('');
+                </tr>`).join('');
             lucide.createIcons();
         };
 
@@ -323,8 +388,8 @@
             const n = prompt("Member Name:");
             if(n) {
                 await db.ref('members').push({ name: n });
-                await db.ref('activityLogs').push({ text: `${n} joined the group` });
-                showToast("Member Added");
+                await db.ref('activityLogs').push({ text: `${n} joined the trip` });
+                showToast("Welcome to the trip, " + n + "!");
             }
         };
 
@@ -332,20 +397,17 @@
             e.preventDefault();
             const title = document.getElementById('exp-title').value;
             const amount = document.getElementById('exp-amount').value;
-            const category = document.getElementById('exp-category').value;
             const paidBy = document.getElementById('exp-payer').value;
             const participants = Array.from(document.querySelectorAll('#split-participants input:checked')).map(i => i.value);
-            
-            if(participants.length === 0) return alert("Select participants!");
-            
-            await db.ref('expenses').push({ title, amount, category, paidBy, participants });
-            await db.ref('activityLogs').push({ text: `New Bill: ₹${amount} for ${title}` });
+            if(participants.length === 0) return alert("Select at least one person to split with!");
+            await db.ref('expenses').push({ title, amount, paidBy, participants });
+            await db.ref('activityLogs').push({ text: `${paidBy} paid ₹${amount} for ${title}` });
             closeModal('expenseModal');
             e.target.reset();
-            showToast("Expense Saved");
+            showToast("Bill Added Successfully");
         };
 
-        window.onload = () => { lucide.createIcons(); initSync(); };
+        window.onload = () => { lucide.createIcons(); sync(); };
     </script>
 </body>
 </html>
