@@ -3,219 +3,359 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TripSplit | Premium Group Expense Engine</title>
+    <title>TripSplit | Premium Expense Engine</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <style>
+        /* --- PREMIUM CSS (EMBEDDED TO PREVENT REMOVAL) --- */
+        :root {
+            --primary: #2563eb;
+            --bg-main: #f8fafc;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-main);
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .nav-link.active, .nav-link-mobile.active {
+            background: #eff6ff;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* Animation for Sections */
+        .section-content {
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Stat Cards */
+        .stat-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .toast {
+            background: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            border-left: 6px solid var(--primary);
+            font-weight: 700;
+            animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .toast.success { border-left-color: #10b981; }
+        .toast.error { border-left-color: #ef4444; }
+
+        @keyframes toastIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        .modal-overlay {
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+        }
+    </style>
 </head>
-<body class="bg-[#F8FAFC] text-slate-900 font-['Plus_Jakarta_Sans'] antialiased">
+<body class="antialiased">
 
     <div id="toast-container"></div>
 
-    <div id="custom-confirm-modal" class="modal-overlay fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl scale-95 animate-in zoom-in-95 duration-200">
-            <div class="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-6">
-                <i data-lucide="alert-triangle" class="w-8 h-8"></i>
-            </div>
+    <div id="custom-confirm-modal" class="modal-overlay fixed inset-0 bg-slate-900/40 z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
             <h3 class="text-xl font-black text-slate-800 mb-2">Are you sure?</h3>
-            <p id="confirm-message" class="text-slate-500 font-medium mb-8 leading-relaxed">This action cannot be undone.</p>
+            <p id="confirm-message" class="text-slate-500 mb-8">This action cannot be undone.</p>
             <div class="flex gap-3">
-                <button id="confirm-cancel" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all">Cancel</button>
-                <button id="confirm-proceed" class="flex-1 py-4 bg-red-500 text-white rounded-2xl font-bold shadow-lg shadow-red-100 hover:bg-red-600 transition-all">Proceed</button>
+                <button id="confirm-cancel" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold">Cancel</button>
+                <button id="confirm-proceed" class="flex-1 py-4 bg-red-500 text-white rounded-2xl font-bold">Proceed</button>
             </div>
         </div>
     </div>
 
-    <div class="md:hidden bg-white border-b border-slate-200 p-4 sticky top-0 z-30 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-                <i data-lucide="plane" class="w-5 h-5"></i>
-            </div>
-            <span class="text-lg font-bold text-slate-800 tracking-tight">TripSplit</span>
-        </div>
-        <button onclick="toggleMobileMenu()" class="p-2 bg-slate-50 rounded-lg text-slate-600 active:scale-95 transition-transform">
-            <i data-lucide="menu" id="menu-icon"></i>
-        </button>
+    <div class="md:hidden bg-white border-b p-4 sticky top-0 z-30 flex justify-between items-center">
+        <span class="font-black text-blue-600">TripSplit</span>
+        <button onclick="toggleMobileMenu()"><i data-lucide="menu"></i></button>
     </div>
 
-    <div id="mobile-sidebar" class="fixed inset-0 bg-slate-900/50 z-40 hidden backdrop-blur-sm transition-opacity">
-        <div class="w-72 bg-white h-full p-6 shadow-2xl flex flex-col">
-            <div class="flex justify-between items-center mb-10">
-                <span class="font-black text-xl tracking-tight text-blue-600">Menu</span>
-                <button onclick="toggleMobileMenu()" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="x"></i></button>
-            </div>
-            <nav class="space-y-3 flex-1">
-                <button onclick="handleMobileNav('dashboard')" class="nav-link-mobile w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-slate-600 text-left">
-                    <i data-lucide="layout-grid"></i> Dashboard
-                </button>
-                <button onclick="handleMobileNav('expenses')" class="nav-link-mobile w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-slate-600 text-left">
-                    <i data-lucide="receipt"></i> Expenses
-                </button>
-                <button onclick="handleMobileNav('members')" class="nav-link-mobile w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-slate-600 text-left">
-                    <i data-lucide="users"></i> Members
-                </button>
+    <div id="mobile-sidebar" class="fixed inset-0 bg-slate-900/50 z-40 hidden backdrop-blur-sm">
+        <div class="w-72 bg-white h-full p-6 flex flex-col">
+            <button onclick="toggleMobileMenu()" class="self-end p-2"><i data-lucide="x"></i></button>
+            <nav class="mt-8 space-y-4">
+                <button onclick="handleMobileNav('dashboard')" class="nav-link-mobile w-full text-left p-4 rounded-2xl flex gap-3"><i data-lucide="layout-grid"></i> Dashboard</button>
+                <button onclick="handleMobileNav('expenses')" class="nav-link-mobile w-full text-left p-4 rounded-2xl flex gap-3"><i data-lucide="receipt"></i> Expenses</button>
+                <button onclick="handleMobileNav('members')" class="nav-link-mobile w-full text-left p-4 rounded-2xl flex gap-3"><i data-lucide="users"></i> Members</button>
             </nav>
         </div>
     </div>
 
     <div class="flex min-h-screen">
-        
-        <aside class="w-64 bg-white border-r border-slate-200 fixed h-full z-20 hidden md:block">
+        <aside class="w-64 bg-white border-r fixed h-full hidden md:block z-20">
             <div class="p-8">
                 <div class="flex items-center gap-3 mb-12">
-                    <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-blue-400 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                        <i data-lucide="plane" class="w-6 h-6"></i>
-                    </div>
-                    <span class="text-2xl font-black tracking-tighter text-slate-800">TripSplit</span>
+                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg"><i data-lucide="plane"></i></div>
+                    <span class="text-2xl font-black text-slate-800">TripSplit</span>
                 </div>
-                
                 <nav class="space-y-2">
-                    <button onclick="showSection('dashboard')" class="nav-link active w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold text-slate-500">
-                        <i data-lucide="layout-grid" class="w-5 h-5"></i> Dashboard
-                    </button>
-                    <button onclick="showSection('expenses')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold text-slate-500">
-                        <i data-lucide="receipt" class="w-5 h-5"></i> Expenses
-                    </button>
-                    <button onclick="showSection('members')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all font-bold text-slate-500">
-                        <i data-lucide="users" class="w-5 h-5"></i> Members
-                    </button>
+                    <button onclick="showSection('dashboard')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 font-bold transition-all"><i data-lucide="layout-grid"></i> Dashboard</button>
+                    <button onclick="showSection('expenses')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 font-bold transition-all"><i data-lucide="receipt"></i> Expenses</button>
+                    <button onclick="showSection('members')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 font-bold transition-all"><i data-lucide="users"></i> Members</button>
                 </nav>
             </div>
         </aside>
 
-        <main class="flex-1 md:ml-64 p-4 sm:p-6 md:p-10 w-full max-w-[1600px] mx-auto overflow-hidden">
-            
+        <main class="flex-1 md:ml-64 p-4 md:p-10 w-full overflow-hidden">
             <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
                 <div>
-                    <h1 id="section-title" class="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">Dashboard</h1>
-                    <p class="text-slate-500 font-medium mt-1">Real-time trip expense tracking.</p>
+                    <h1 id="section-title" class="text-4xl font-black text-slate-800 tracking-tight">Dashboard</h1>
                 </div>
-                <div class="flex flex-wrap gap-3 w-full sm:w-auto">
-                    <button onclick="openMemberPrompt()" class="flex-1 sm:flex-none bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-bold shadow-sm hover:bg-slate-50 transition-all active:scale-95">
-                        <i data-lucide="user-plus" class="w-5 h-5"></i> Add Member
-                    </button>
-                    <button onclick="openModal('expenseModal')" class="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-blue-100 transition-all transform hover:-translate-y-0.5 active:scale-95 font-bold">
-                        <i data-lucide="plus" class="w-5 h-5"></i> Add Expense
-                    </button>
+                <div class="flex gap-3 w-full sm:w-auto">
+                    <button onclick="openMemberPrompt()" class="flex-1 bg-white border px-6 py-3 rounded-2xl font-bold shadow-sm">Add Member</button>
+                    <button onclick="openModal('expenseModal')" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold shadow-xl shadow-blue-100">+ Add Expense</button>
                 </div>
             </header>
 
             <section id="dashboard-section" class="section-content">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                    <div class="stat-card p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <p class="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">Total Trip Cost</p>
-                            <h2 id="total-expense-val" class="text-4xl font-black text-slate-800 tracking-tighter">₹0</h2>
-                        </div>
-                        <i data-lucide="wallet" class="absolute -right-4 -bottom-4 w-24 h-24 text-blue-600/5 group-hover:scale-110 transition-transform"></i>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+                    <div class="stat-card p-6 bg-white rounded-[2rem] border shadow-sm">
+                        <p class="text-slate-400 text-xs font-black uppercase mb-1">Total Trip Cost</p>
+                        <h2 id="total-expense-val" class="text-4xl font-black text-slate-800 tracking-tighter">₹0</h2>
                     </div>
-                    
-                    <div class="stat-card p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <p class="text-slate-400 text-xs font-black uppercase tracking-widest mb-1 text-green-500">Heavy Spender</p>
-                            <h2 id="top-payer-val" class="text-3xl font-black text-slate-800 tracking-tighter truncate">---</h2>
-                        </div>
-                        <i data-lucide="crown" class="absolute -right-4 -bottom-4 w-24 h-24 text-green-600/5 group-hover:scale-110 transition-transform"></i>
+                    <div class="stat-card p-6 bg-white rounded-[2rem] border shadow-sm">
+                        <p class="text-slate-400 text-xs font-black uppercase mb-1 text-green-500">Heavy Spender</p>
+                        <h2 id="top-payer-val" class="text-3xl font-black text-slate-800 tracking-tighter truncate">---</h2>
                     </div>
-
-                    <div class="stat-card p-6 bg-white rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group">
-                        <div class="relative z-10">
-                            <p class="text-slate-400 text-xs font-black uppercase tracking-widest mb-1 text-blue-500">Pending Debts</p>
-                            <h2 id="pending-settle-val" class="text-4xl font-black text-slate-800 tracking-tighter">0</h2>
-                        </div>
-                        <i data-lucide="arrow-right-left" class="absolute -right-4 -bottom-4 w-24 h-24 text-orange-600/5 group-hover:scale-110 transition-transform"></i>
+                    <div class="stat-card p-6 bg-white rounded-[2rem] border shadow-sm">
+                        <p class="text-slate-400 text-xs font-black uppercase mb-1 text-blue-500">Debts</p>
+                        <h2 id="pending-settle-val" class="text-4xl font-black text-slate-800 tracking-tighter">0</h2>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                    <div class="lg:col-span-3 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                        <h3 class="font-black text-xl text-slate-800 mb-6 flex items-center gap-2">
-                            <i data-lucide="zap" class="w-6 h-6 text-blue-500 fill-blue-500"></i> Smart Split Ledger
-                        </h3>
-                        <div id="settlement-list" class="grid gap-4">
-                            </div>
+                    <div class="lg:col-span-3 bg-white p-8 rounded-[2.5rem] border shadow-sm">
+                        <h3 class="font-black text-xl mb-6">Split Ledger</h3>
+                        <div id="settlement-list" class="space-y-4"></div>
                     </div>
-
-                    <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                        <h3 class="font-black text-xl text-slate-800 mb-6 flex items-center gap-2">
-                            <i data-lucide="history" class="w-6 h-6 text-slate-400"></i> Recent Activity
-                        </h3>
-                        <div id="activity-feed" class="space-y-6 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-                            </div>
+                    <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border shadow-sm">
+                        <h3 class="font-black text-xl mb-6 text-slate-400">Activity</h3>
+                        <div id="activity-feed" class="space-y-4"></div>
                     </div>
                 </div>
             </section>
 
             <section id="expenses-section" class="section-content hidden">
-                <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left min-w-[700px]">
-                            <thead>
-                                <tr class="bg-slate-50/50 border-b border-slate-100">
-                                    <th class="p-6 text-xs font-black uppercase tracking-widest text-slate-400">Bill Details</th>
-                                    <th class="p-6 text-xs font-black uppercase tracking-widest text-slate-400">Paid By</th>
-                                    <th class="p-6 text-xs font-black uppercase tracking-widest text-slate-400">Amount</th>
-                                    <th class="p-6 text-xs font-black uppercase tracking-widest text-slate-400 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="expenses-tbody" class="divide-y divide-slate-50"></tbody>
-                        </table>
-                    </div>
+                <div class="bg-white rounded-[2.5rem] border shadow-sm overflow-hidden overflow-x-auto">
+                    <table class="w-full text-left min-w-[600px]">
+                        <thead class="bg-slate-50 border-b">
+                            <tr><th class="p-6 font-black uppercase text-xs text-slate-400">Description</th><th class="p-6 font-black uppercase text-xs text-slate-400">Payer</th><th class="p-6 font-black uppercase text-xs text-slate-400">Amount</th><th class="p-6 text-right">Action</th></tr>
+                        </thead>
+                        <tbody id="expenses-tbody"></tbody>
+                    </table>
                 </div>
             </section>
 
             <section id="members-section" class="section-content hidden">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="members-grid"></div>
+                <div id="members-grid" class="grid grid-cols-1 sm:grid-cols-4 gap-6"></div>
             </section>
         </main>
     </div>
 
-    <div id="expenseModal" class="modal-overlay fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center hidden p-4 sm:p-6">
-        <div class="bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 transform transition-all border border-white/20">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-2xl font-black text-slate-800 tracking-tight">New Trip Expense</h2>
-                <button onclick="closeModal('expenseModal')" class="p-2 hover:bg-slate-100 rounded-full transition-colors"><i data-lucide="x"></i></button>
+    <div id="expenseModal" class="modal-overlay fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black">New Expense</h2>
+                <button onclick="closeModal('expenseModal')"><i data-lucide="x"></i></button>
             </div>
-            
-            <form id="expense-form" class="space-y-6">
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Description</label>
-                    <input type="text" id="exp-title" placeholder="What did you pay for?" class="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-semibold" required>
-                </div>
-                
+            <form id="expense-form" class="space-y-4">
+                <input type="text" id="exp-title" placeholder="Description" class="w-full p-4 bg-slate-50 rounded-2xl border outline-none" required>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Amount (₹)</label>
-                        <input type="number" id="exp-amount" placeholder="0" class="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-black text-lg text-blue-600" required>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
-                        <select id="exp-category" class="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none font-bold">
-                            <option>Food</option><option>Travel</option><option>Hotel</option><option>Drinks</option><option>Misc</option>
-                        </select>
-                    </div>
+                    <input type="number" id="exp-amount" placeholder="Amount (₹)" class="w-full p-4 bg-slate-50 rounded-2xl border font-black" required>
+                    <select id="exp-category" class="p-4 bg-slate-50 rounded-2xl border font-bold"><option>Food</option><option>Travel</option><option>Hotel</option></select>
                 </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Payer</label>
-                    <select id="exp-payer" class="w-full p-4 bg-slate-50 rounded-2xl border border-slate-100 outline-none font-bold text-slate-700"></select>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Participating Members</label>
-                    <div id="split-participants" class="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-3 bg-slate-50 rounded-2xl border border-slate-100 custom-scrollbar"></div>
-                </div>
-
-                <button type="submit" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 hover:-translate-y-1 transition-all active:scale-95 mt-4">
-                    Save Expense Record
-                </button>
+                <select id="exp-payer" class="w-full p-4 bg-slate-50 rounded-2xl border font-bold"></select>
+                <div id="split-participants" class="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl border max-h-32 overflow-y-auto"></div>
+                <button type="submit" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black">Save Record</button>
             </form>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        /* --- CORE JAVASCRIPT --- */
+        const firebaseConfig = {
+            apiKey: "AIzaSyCy5NOv_bRx8Ozbq3n5MzXz8D7cF1Piwko",
+            authDomain: "services-6ce70.firebaseapp.com",
+            databaseURL: "https://services-6ce70-default-rtdb.firebaseio.com",
+            projectId: "services-6ce70",
+            storageBucket: "services-6ce70.firebasestorage.app",
+            messagingSenderId: "153760408547",
+            appId: "1:153760408547:web:5f61c39085dbe2f828b6d6",
+            measurementId: "G-6Z4H8X4EXL"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let members = [], expenses = [];
+
+        // UI Handlers
+        window.toggleMobileMenu = () => document.getElementById('mobile-sidebar').classList.toggle('hidden');
+        window.handleMobileNav = (id) => { showSection(id); toggleMobileMenu(); };
+        window.openModal = (id) => { const m = document.getElementById(id); m.classList.remove('hidden'); m.classList.add('flex'); };
+        window.closeModal = (id) => { const m = document.getElementById(id); m.classList.add('hidden'); m.classList.remove('flex'); };
+
+        window.showSection = (id) => {
+            document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`${id}-section`).classList.remove('hidden');
+            document.querySelectorAll('.nav-link, .nav-link-mobile').forEach(l => l.classList.remove('active'));
+            document.getElementById('section-title').innerText = id.charAt(0).toUpperCase() + id.slice(1);
+            lucide.createIcons();
+        };
+
+        window.showToast = (msg, type = 'info') => {
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerText = msg;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        };
+
+        window.customConfirm = (msg, onConfirm) => {
+            const m = document.getElementById('custom-confirm-modal');
+            document.getElementById('confirm-message').innerText = msg;
+            m.classList.remove('hidden'); m.classList.add('flex');
+            document.getElementById('confirm-proceed').onclick = () => { onConfirm(); m.classList.add('hidden'); };
+            document.getElementById('confirm-cancel').onclick = () => m.classList.add('hidden');
+        };
+
+        // Data Management
+        window.openMemberPrompt = async () => {
+            const n = prompt("Member Name:");
+            if(n) {
+                await db.ref('members').push({ name: n, role: 'Member' });
+                showToast(`${n} added!`, 'success');
+            }
+        };
+
+        const listen = () => {
+            db.ref('members').on('value', snap => {
+                members = snap.val() ? Object.entries(snap.val()).map(([id,v]) => ({id,...v})) : [];
+                renderMembers(); updateDropdowns(); calc();
+            });
+            db.ref('expenses').on('value', snap => {
+                expenses = snap.val() ? Object.entries(snap.val()).map(([id,v]) => ({id,...v})) : [];
+                renderExpenses(); calc();
+            });
+            db.ref('activityLogs').limitToLast(5).on('value', snap => renderActivity(snap.val()));
+        };
+
+        const updateDropdowns = () => {
+            document.getElementById('exp-payer').innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+            document.getElementById('split-participants').innerHTML = members.map(m => `
+                <label class="flex items-center gap-2 p-2"><input type="checkbox" value="${m.name}" checked> <span class="text-xs font-bold">${m.name}</span></label>
+            `).join('');
+        };
+
+        const calc = () => {
+            let total = 0; const bal = {}, spend = {};
+            members.forEach(m => { bal[m.name] = 0; spend[m.name] = 0; });
+            expenses.forEach(e => {
+                const a = parseFloat(e.amount); total += a;
+                spend[e.paidBy] += a;
+                const s = a / e.participants.length;
+                bal[e.paidBy] += a;
+                e.participants.forEach(p => { if(bal.hasOwnProperty(p)) bal[p] -= s; });
+            });
+            document.getElementById('total-expense-val').innerText = `₹${total.toLocaleString()}`;
+            const top = Object.keys(spend).reduce((a,b) => spend[a] > spend[b] ? a : b, '---');
+            document.getElementById('top-payer-val').innerText = top;
+            renderSettlements(bal);
+        };
+
+        const renderSettlements = (bal) => {
+            const list = document.getElementById('settlement-list');
+            const d = [], c = [];
+            Object.entries(bal).forEach(([n, b]) => {
+                if(b < -1) d.push({n, b: Math.abs(b)}); else if(b > 1) c.push({n, b});
+            });
+            let html = '', count = 0;
+            d.sort((a,b)=>b.b-a.b); c.sort((a,b)=>b.b-a.b);
+            let i=0, j=0;
+            while(i<d.length && j<c.length) {
+                const amt = Math.min(d[i].b, c[j].b);
+                html += `<div class="p-4 bg-slate-50 rounded-2xl border flex justify-between">
+                    <span class="font-bold text-sm">${d[i].n} → ${c[j].n}</span>
+                    <span class="font-black text-blue-600">₹${Math.round(amt)}</span>
+                </div>`;
+                d[i].b -= amt; c[j].b -= amt;
+                if(d[i].b < 1) i++; if(c[j].b < 1) j++; count++;
+            }
+            list.innerHTML = html || '<p class="text-slate-400 text-center">No Debts!</p>';
+            document.getElementById('pending-settle-val').innerText = count;
+            lucide.createIcons();
+        };
+
+        const renderMembers = () => {
+            document.getElementById('members-grid').innerHTML = members.map(m => `
+                <div class="bg-white p-6 rounded-[2rem] border flex items-center justify-between group">
+                    <span class="font-bold">${m.name}</span>
+                    <button onclick="db.ref('members').child('${m.id}').remove()" class="text-red-400 opacity-0 group-hover:opacity-100"><i data-lucide="trash-2"></i></button>
+                </div>`).join('');
+            lucide.createIcons();
+        };
+
+        const renderExpenses = () => {
+            document.getElementById('expenses-tbody').innerHTML = expenses.map(e => `
+                <tr class="border-b"><td class="p-6 font-bold">${e.title}</td><td class="p-6">${e.paidBy}</td><td class="p-6 font-black">₹${e.amount}</td><td class="p-6 text-right"><button onclick="db.ref('expenses').child('${e.id}').remove()" class="text-red-400"><i data-lucide="x"></i></button></td></tr>
+            `).join('');
+            lucide.createIcons();
+        };
+
+        const renderActivity = (data) => {
+            if(!data) return;
+            document.getElementById('activity-feed').innerHTML = Object.values(data).reverse().map(l => `<p class="text-sm font-medium text-slate-600">${l.text}</p>`).join('');
+        };
+
+        document.getElementById('expense-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('exp-title').value;
+            const amount = document.getElementById('exp-amount').value;
+            const paidBy = document.getElementById('exp-payer').value;
+            const participants = Array.from(document.querySelectorAll('#split-participants input:checked')).map(i => i.value);
+            await db.ref('expenses').push({ title, amount, paidBy, participants });
+            await db.ref('activityLogs').push({ text: `${paidBy} paid ₹${amount}` });
+            closeModal('expenseModal');
+        };
+
+        window.onload = () => { lucide.createIcons(); listen(); showSection('dashboard'); };
+    </script>
 </body>
 </html>
