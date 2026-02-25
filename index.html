@@ -3,214 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TripSplit | Premium Expense Engine</title>
+    <title>TripSplit | Advanced Expense Manager</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <style>
-        /* --- PREMIUM CSS (EMBEDDED TO PREVENT REMOVAL) --- */
-        :root {
-            --primary: #2563eb;
-            --bg-main: #f8fafc;
-        }
+        /* --- FULL BUILT-IN PREMIUM CSS --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        :root { --primary: #2563eb; --primary-light: #eff6ff; --bg: #f8fafc; --text: #1e293b; --text-light: #64748b; }
+        
+        body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; flex-direction: column; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; position: fixed; height: 100vh; padding: 2rem; z-index: 100; }
+        .logo { display: flex; align-items: center; gap: 10px; font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: 3rem; }
+        .logo-box { background: var(--primary); color: white; padding: 8px; border-radius: 10px; display: flex; }
+        
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; cursor: pointer; color: var(--text-light); font-weight: 600; transition: 0.3s; margin-bottom: 8px; border: none; background: none; width: 100%; text-align: left; }
+        .nav-item:hover { background: var(--bg); color: var(--primary); }
+        .nav-item.active { background: var(--primary-light); color: var(--primary); }
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-main);
-            overflow-x: hidden;
-        }
+        /* Main Content */
+        .main-content { margin-left: 260px; padding: 3rem; flex: 1; width: calc(100% - 260px); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .btn { padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; border: none; display: flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2); }
+        .btn-white { background: white; border: 1px solid #e2e8f0; color: var(--text); }
+        .btn:active { transform: scale(0.95); }
 
-        /* Sidebar Navigation */
-        .nav-link.active, .nav-link-mobile.active {
-            background: #eff6ff;
-            color: var(--primary);
-            font-weight: 700;
-        }
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .stat-label { color: var(--text-light); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+        .stat-value { font-size: 2rem; font-weight: 900; color: var(--text); }
 
-        /* Animation for Sections */
-        .section-content {
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        /* Dashboard Bottom Grid */
+        .dashboard-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 1.5rem; }
+        .panel { background: white; padding: 2rem; border-radius: 30px; border: 1px solid #f1f5f9; }
+        .panel-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
 
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        /* Settlements & List */
+        .settle-item { background: var(--bg); padding: 1rem; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border: 1px solid #f1f5f9; }
+        .debtor-info { font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+        .amount-tag { font-weight: 900; color: var(--primary); font-size: 1.1rem; }
 
-        /* Stat Cards */
-        .stat-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .stat-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
-        }
+        /* Table */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 1rem; color: var(--text-light); font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; }
+        td { padding: 1.25rem 1rem; border-bottom: 1px solid #f8fafc; font-weight: 600; }
+        .category-badge { padding: 4px 12px; background: var(--primary-light); color: var(--primary); border-radius: 20px; font-size: 0.7rem; font-weight: 800; }
 
-        /* Toast Notifications */
-        #toast-container {
-            position: fixed;
-            top: 24px;
-            right: 24px;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .toast {
-            background: white;
-            padding: 16px 24px;
-            border-radius: 16px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-            border-left: 6px solid var(--primary);
-            font-weight: 700;
-            animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        .toast.success { border-left-color: #10b981; }
-        .toast.error { border-left-color: #ef4444; }
+        /* Modals */
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(8px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 1.5rem; }
+        .modal-content { background: white; width: 100%; max-width: 500px; padding: 2.5rem; border-radius: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .input-group { margin-bottom: 1.25rem; }
+        .input-group label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-light); text-transform: uppercase; margin-bottom: 0.5rem; }
+        input, select { width: 100%; padding: 12px; background: var(--bg); border: 1px solid #e2e8f0; border-radius: 12px; font-size: 1rem; font-weight: 600; outline: none; }
+        input:focus { border-color: var(--primary); }
 
-        @keyframes toastIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        /* Toast */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; }
+        .toast { background: white; padding: 1rem 1.5rem; border-radius: 16px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); border-left: 5px solid var(--primary); margin-bottom: 10px; font-weight: 700; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-
-        .modal-overlay {
-            backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
+        /* Mobile Adjustments */
+        .mobile-header { display: none; background: white; padding: 1rem; border-bottom: 1px solid #e2e8f0; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 200; }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .mobile-header { display: flex; }
+            .main-content { margin-left: 0; padding: 1.5rem; width: 100%; }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
-<body class="antialiased">
+<body>
 
     <div id="toast-container"></div>
 
-    <div id="custom-confirm-modal" class="modal-overlay fixed inset-0 bg-slate-900/40 z-[100] hidden items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl">
-            <h3 class="text-xl font-black text-slate-800 mb-2">Are you sure?</h3>
-            <p id="confirm-message" class="text-slate-500 mb-8">This action cannot be undone.</p>
-            <div class="flex gap-3">
-                <button id="confirm-cancel" class="flex-1 py-4 bg-slate-100 rounded-2xl font-bold">Cancel</button>
-                <button id="confirm-proceed" class="flex-1 py-4 bg-red-500 text-white rounded-2xl font-bold">Proceed</button>
+    <div class="mobile-header">
+        <div class="logo" style="margin-bottom: 0;"><div class="logo-box"><i data-lucide="plane" size="20"></i></div> TripSplit</div>
+        <button class="btn btn-white" onclick="toggleMobileMenu()"><i data-lucide="menu"></i></button>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="logo"><div class="logo-box"><i data-lucide="plane"></i></div> TripSplit</div>
+        <button class="nav-item active" onclick="showSection('dashboard', this)"><i data-lucide="layout-grid"></i> Dashboard</button>
+        <button class="nav-item" onclick="showSection('expenses', this)"><i data-lucide="receipt"></i> Expenses</button>
+        <button class="nav-item" onclick="showSection('members', this)"><i data-lucide="users"></i> Members</button>
+    </aside>
+
+    <main class="main-content">
+        <header class="header">
+            <div>
+                <h1 id="page-title" style="font-size: 2.25rem; font-weight: 900; letter-spacing: -0.02em;">Dashboard</h1>
+                <p id="page-desc" style="color: var(--text-light); font-weight: 600;">Real-time Trip Ledger</p>
             </div>
-        </div>
-    </div>
-
-    <div class="md:hidden bg-white border-b p-4 sticky top-0 z-30 flex justify-between items-center">
-        <span class="font-black text-blue-600">TripSplit</span>
-        <button onclick="toggleMobileMenu()"><i data-lucide="menu"></i></button>
-    </div>
-
-    <div id="mobile-sidebar" class="fixed inset-0 bg-slate-900/50 z-40 hidden backdrop-blur-sm">
-        <div class="w-72 bg-white h-full p-6 flex flex-col">
-            <button onclick="toggleMobileMenu()" class="self-end p-2"><i data-lucide="x"></i></button>
-            <nav class="mt-8 space-y-4">
-                <button onclick="handleMobileNav('dashboard')" class="nav-link-mobile w-full text-left p-4 rounded-2xl flex gap-3"><i data-lucide="layout-grid"></i> Dashboard</button>
-                <button onclick="handleMobileNav('expenses')" class="nav-link-mobile w-full text-left p-4 rounded-2xl flex gap-3"><i data-lucide="receipt"></i> Expenses</button>
-                <button onclick="handleMobileNav('members')" class="nav-link-mobile w-full text-left p-4 rounded-2xl flex gap-3"><i data-lucide="users"></i> Members</button>
-            </nav>
-        </div>
-    </div>
-
-    <div class="flex min-h-screen">
-        <aside class="w-64 bg-white border-r fixed h-full hidden md:block z-20">
-            <div class="p-8">
-                <div class="flex items-center gap-3 mb-12">
-                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg"><i data-lucide="plane"></i></div>
-                    <span class="text-2xl font-black text-slate-800">TripSplit</span>
-                </div>
-                <nav class="space-y-2">
-                    <button onclick="showSection('dashboard')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 font-bold transition-all"><i data-lucide="layout-grid"></i> Dashboard</button>
-                    <button onclick="showSection('expenses')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 font-bold transition-all"><i data-lucide="receipt"></i> Expenses</button>
-                    <button onclick="showSection('members')" class="nav-link w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-slate-500 font-bold transition-all"><i data-lucide="users"></i> Members</button>
-                </nav>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-white" onclick="openMemberPrompt()">+ Member</button>
+                <button class="btn btn-primary" onclick="openModal('expenseModal')"><i data-lucide="plus"></i> Expense</button>
             </div>
-        </aside>
+        </header>
 
-        <main class="flex-1 md:ml-64 p-4 md:p-10 w-full overflow-hidden">
-            <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
-                <div>
-                    <h1 id="section-title" class="text-4xl font-black text-slate-800 tracking-tight">Dashboard</h1>
+        <section id="dashboard-section" class="section-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <p class="stat-label">Total Spent</p>
+                    <div class="stat-value" id="total-val">₹0</div>
                 </div>
-                <div class="flex gap-3 w-full sm:w-auto">
-                    <button onclick="openMemberPrompt()" class="flex-1 bg-white border px-6 py-3 rounded-2xl font-bold shadow-sm">Add Member</button>
-                    <button onclick="openModal('expenseModal')" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold shadow-xl shadow-blue-100">+ Add Expense</button>
+                <div class="stat-card">
+                    <p class="stat-label" style="color: #10b981;">Top Payer</p>
+                    <div class="stat-value" id="top-payer-val" style="font-size: 1.5rem;">---</div>
                 </div>
-            </header>
-
-            <section id="dashboard-section" class="section-content">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-                    <div class="stat-card p-6 bg-white rounded-[2rem] border shadow-sm">
-                        <p class="text-slate-400 text-xs font-black uppercase mb-1">Total Trip Cost</p>
-                        <h2 id="total-expense-val" class="text-4xl font-black text-slate-800 tracking-tighter">₹0</h2>
-                    </div>
-                    <div class="stat-card p-6 bg-white rounded-[2rem] border shadow-sm">
-                        <p class="text-slate-400 text-xs font-black uppercase mb-1 text-green-500">Heavy Spender</p>
-                        <h2 id="top-payer-val" class="text-3xl font-black text-slate-800 tracking-tighter truncate">---</h2>
-                    </div>
-                    <div class="stat-card p-6 bg-white rounded-[2rem] border shadow-sm">
-                        <p class="text-slate-400 text-xs font-black uppercase mb-1 text-blue-500">Debts</p>
-                        <h2 id="pending-settle-val" class="text-4xl font-black text-slate-800 tracking-tighter">0</h2>
-                    </div>
+                <div class="stat-card">
+                    <p class="stat-label" style="color: var(--primary);">Open Debts</p>
+                    <div class="stat-value" id="debt-count-val">0</div>
                 </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                    <div class="lg:col-span-3 bg-white p-8 rounded-[2.5rem] border shadow-sm">
-                        <h3 class="font-black text-xl mb-6">Split Ledger</h3>
-                        <div id="settlement-list" class="space-y-4"></div>
-                    </div>
-                    <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border shadow-sm">
-                        <h3 class="font-black text-xl mb-6 text-slate-400">Activity</h3>
-                        <div id="activity-feed" class="space-y-4"></div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="expenses-section" class="section-content hidden">
-                <div class="bg-white rounded-[2.5rem] border shadow-sm overflow-hidden overflow-x-auto">
-                    <table class="w-full text-left min-w-[600px]">
-                        <thead class="bg-slate-50 border-b">
-                            <tr><th class="p-6 font-black uppercase text-xs text-slate-400">Description</th><th class="p-6 font-black uppercase text-xs text-slate-400">Payer</th><th class="p-6 font-black uppercase text-xs text-slate-400">Amount</th><th class="p-6 text-right">Action</th></tr>
-                        </thead>
-                        <tbody id="expenses-tbody"></tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="members-section" class="section-content hidden">
-                <div id="members-grid" class="grid grid-cols-1 sm:grid-cols-4 gap-6"></div>
-            </section>
-        </main>
-    </div>
-
-    <div id="expenseModal" class="modal-overlay fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black">New Expense</h2>
-                <button onclick="closeModal('expenseModal')"><i data-lucide="x"></i></button>
             </div>
-            <form id="expense-form" class="space-y-4">
-                <input type="text" id="exp-title" placeholder="Description" class="w-full p-4 bg-slate-50 rounded-2xl border outline-none" required>
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="number" id="exp-amount" placeholder="Amount (₹)" class="w-full p-4 bg-slate-50 rounded-2xl border font-black" required>
-                    <select id="exp-category" class="p-4 bg-slate-50 rounded-2xl border font-bold"><option>Food</option><option>Travel</option><option>Hotel</option></select>
+
+            <div class="dashboard-grid">
+                <div class="panel">
+                    <div class="panel-title"><i data-lucide="zap" style="color: #f59e0b;"></i> Smart Settlement</div>
+                    <div id="settlement-list"></div>
                 </div>
-                <select id="exp-payer" class="w-full p-4 bg-slate-50 rounded-2xl border font-bold"></select>
-                <div id="split-participants" class="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl border max-h-32 overflow-y-auto"></div>
-                <button type="submit" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black">Save Record</button>
+                <div class="panel">
+                    <div class="panel-title"><i data-lucide="activity"></i> Recent Log</div>
+                    <div id="activity-feed" style="font-size: 0.9rem; font-weight: 600; color: var(--text-light);"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="expenses-section" class="section-content" style="display: none;">
+            <div class="panel" style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr><th>Description</th><th>Payer</th><th>Amount</th><th>Category</th><th></th></tr>
+                    </thead>
+                    <tbody id="expenses-tbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="members-section" class="section-content" style="display: none;">
+            <div class="stats-grid" id="members-grid"></div>
+        </section>
+    </main>
+
+    <div class="modal" id="expenseModal">
+        <div class="modal-content">
+            <h2 style="font-weight: 900; margin-bottom: 1.5rem;">New Expense</h2>
+            <form id="expense-form">
+                <div class="input-group">
+                    <label>Description</label>
+                    <input type="text" id="exp-title" placeholder="e.g. Flight Tickets" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label>Amount (₹)</label>
+                        <input type="number" id="exp-amount" placeholder="0.00" required>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label>Category</label>
+                        <select id="exp-category"><option>Food</option><option>Travel</option><option>Hotel</option><option>Misc</option></select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Paid By</label>
+                    <select id="exp-payer"></select>
+                </div>
+                <div class="input-group">
+                    <label>Split With (Check Participants)</label>
+                    <div id="split-participants" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; background: var(--bg); border-radius: 12px; max-height: 100px; overflow-y: auto;"></div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 2rem;">
+                    <button type="button" class="btn btn-white" style="flex: 1; justify-content: center;" onclick="closeModal('expenseModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">Save Expense</button>
+                </div>
             </form>
         </div>
     </div>
 
     <script>
-        /* --- CORE JAVASCRIPT --- */
+        /* --- CORE LOGIC --- */
         const firebaseConfig = {
             apiKey: "AIzaSyCy5NOv_bRx8Ozbq3n5MzXz8D7cF1Piwko",
             authDomain: "services-6ce70.firebaseapp.com",
@@ -226,136 +202,150 @@
         const db = firebase.database();
         let members = [], expenses = [];
 
-        // UI Handlers
-        window.toggleMobileMenu = () => document.getElementById('mobile-sidebar').classList.toggle('hidden');
-        window.handleMobileNav = (id) => { showSection(id); toggleMobileMenu(); };
-        window.openModal = (id) => { const m = document.getElementById(id); m.classList.remove('hidden'); m.classList.add('flex'); };
-        window.closeModal = (id) => { const m = document.getElementById(id); m.classList.add('hidden'); m.classList.remove('flex'); };
-
-        window.showSection = (id) => {
-            document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
-            document.getElementById(`${id}-section`).classList.remove('hidden');
-            document.querySelectorAll('.nav-link, .nav-link-mobile').forEach(l => l.classList.remove('active'));
-            document.getElementById('section-title').innerText = id.charAt(0).toUpperCase() + id.slice(1);
-            lucide.createIcons();
+        // UI Engine
+        window.showSection = (id, el) => {
+            document.querySelectorAll('.section-content').forEach(s => s.style.display = 'none');
+            document.getElementById(`${id}-section`).style.display = 'block';
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if(el) el.classList.add('active');
+            document.getElementById('page-title').innerText = id.charAt(0).toUpperCase() + id.slice(1);
+            if(window.innerWidth <= 768) document.getElementById('sidebar').style.display = 'none';
         };
 
-        window.showToast = (msg, type = 'info') => {
+        window.toggleMobileMenu = () => {
+            const s = document.getElementById('sidebar');
+            s.style.display = (s.style.display === 'block') ? 'none' : 'block';
+        };
+
+        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
+        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+
+        window.showToast = (msg) => {
             const t = document.createElement('div');
-            t.className = `toast ${type}`;
+            t.className = 'toast';
             t.innerText = msg;
             document.getElementById('toast-container').appendChild(t);
             setTimeout(() => t.remove(), 3000);
         };
 
-        window.customConfirm = (msg, onConfirm) => {
-            const m = document.getElementById('custom-confirm-modal');
-            document.getElementById('confirm-message').innerText = msg;
-            m.classList.remove('hidden'); m.classList.add('flex');
-            document.getElementById('confirm-proceed').onclick = () => { onConfirm(); m.classList.add('hidden'); };
-            document.getElementById('confirm-cancel').onclick = () => m.classList.add('hidden');
-        };
-
-        // Data Management
-        window.openMemberPrompt = async () => {
-            const n = prompt("Member Name:");
-            if(n) {
-                await db.ref('members').push({ name: n, role: 'Member' });
-                showToast(`${n} added!`, 'success');
-            }
-        };
-
-        const listen = () => {
+        // Firebase Sync
+        const initSync = () => {
             db.ref('members').on('value', snap => {
-                members = snap.val() ? Object.entries(snap.val()).map(([id,v]) => ({id,...v})) : [];
-                renderMembers(); updateDropdowns(); calc();
+                members = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({id, ...v})) : [];
+                renderMembers(); updateUI();
             });
             db.ref('expenses').on('value', snap => {
-                expenses = snap.val() ? Object.entries(snap.val()).map(([id,v]) => ({id,...v})) : [];
-                renderExpenses(); calc();
+                expenses = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({id, ...v})) : [];
+                renderExpenses(); updateUI();
             });
-            db.ref('activityLogs').limitToLast(5).on('value', snap => renderActivity(snap.val()));
+            db.ref('activityLogs').limitToLast(5).on('value', snap => {
+                const logs = snap.val() ? Object.values(snap.val()).reverse() : [];
+                document.getElementById('activity-feed').innerHTML = logs.map(l => `<p style="margin-bottom:10px;">• ${l.text}</p>`).join('');
+            });
         };
 
-        const updateDropdowns = () => {
-            document.getElementById('exp-payer').innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-            document.getElementById('split-participants').innerHTML = members.map(m => `
-                <label class="flex items-center gap-2 p-2"><input type="checkbox" value="${m.name}" checked> <span class="text-xs font-bold">${m.name}</span></label>
+        const updateUI = () => {
+            // Update Dropdowns
+            const payerSelect = document.getElementById('exp-payer');
+            payerSelect.innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+            
+            const splitDiv = document.getElementById('split-participants');
+            splitDiv.innerHTML = members.map(m => `
+                <label style="display:flex; align-items:center; gap:5px; font-size:0.8rem; font-weight:700;">
+                    <input type="checkbox" value="${m.name}" checked> ${m.name}
+                </label>
             `).join('');
-        };
 
-        const calc = () => {
+            // Calculations
             let total = 0; const bal = {}, spend = {};
             members.forEach(m => { bal[m.name] = 0; spend[m.name] = 0; });
+
             expenses.forEach(e => {
                 const a = parseFloat(e.amount); total += a;
                 spend[e.paidBy] += a;
-                const s = a / e.participants.length;
+                const share = a / e.participants.length;
                 bal[e.paidBy] += a;
-                e.participants.forEach(p => { if(bal.hasOwnProperty(p)) bal[p] -= s; });
+                e.participants.forEach(p => { if(bal.hasOwnProperty(p)) bal[p] -= share; });
             });
-            document.getElementById('total-expense-val').innerText = `₹${total.toLocaleString()}`;
+
+            document.getElementById('total-val').innerText = `₹${total.toLocaleString()}`;
             const top = Object.keys(spend).reduce((a,b) => spend[a] > spend[b] ? a : b, '---');
             document.getElementById('top-payer-val').innerText = top;
-            renderSettlements(bal);
-        };
 
-        const renderSettlements = (bal) => {
+            // Settlements
             const list = document.getElementById('settlement-list');
             const d = [], c = [];
             Object.entries(bal).forEach(([n, b]) => {
                 if(b < -1) d.push({n, b: Math.abs(b)}); else if(b > 1) c.push({n, b});
             });
+
             let html = '', count = 0;
-            d.sort((a,b)=>b.b-a.b); c.sort((a,b)=>b.b-a.b);
+            d.sort((a,b) => b.b - a.b); c.sort((a,b) => b.b - a.b);
             let i=0, j=0;
-            while(i<d.length && j<c.length) {
+            while(i < d.length && j < c.length) {
                 const amt = Math.min(d[i].b, c[j].b);
-                html += `<div class="p-4 bg-slate-50 rounded-2xl border flex justify-between">
-                    <span class="font-bold text-sm">${d[i].n} → ${c[j].n}</span>
-                    <span class="font-black text-blue-600">₹${Math.round(amt)}</span>
+                html += `<div class="settle-item">
+                    <div class="debtor-info">${d[i].n} <i data-lucide="arrow-right" size="14"></i> ${c[j].n}</div>
+                    <div class="amount-tag">₹${Math.round(amt)}</div>
                 </div>`;
                 d[i].b -= amt; c[j].b -= amt;
                 if(d[i].b < 1) i++; if(c[j].b < 1) j++; count++;
             }
-            list.innerHTML = html || '<p class="text-slate-400 text-center">No Debts!</p>';
-            document.getElementById('pending-settle-val').innerText = count;
+            list.innerHTML = html || '<p style="text-align:center; color:#cbd5e1; padding:2rem;">All clear!</p>';
+            document.getElementById('debt-count-val').innerText = count;
             lucide.createIcons();
         };
 
         const renderMembers = () => {
             document.getElementById('members-grid').innerHTML = members.map(m => `
-                <div class="bg-white p-6 rounded-[2rem] border flex items-center justify-between group">
-                    <span class="font-bold">${m.name}</span>
-                    <button onclick="db.ref('members').child('${m.id}').remove()" class="text-red-400 opacity-0 group-hover:opacity-100"><i data-lucide="trash-2"></i></button>
-                </div>`).join('');
+                <div class="stat-card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:800;">${m.name}</span>
+                    <button onclick="db.ref('members').child('${m.id}').remove()" style="color:#ef4444; border:none; background:none; cursor:pointer;"><i data-lucide="trash-2" size="18"></i></button>
+                </div>
+            `).join('');
             lucide.createIcons();
         };
 
         const renderExpenses = () => {
             document.getElementById('expenses-tbody').innerHTML = expenses.map(e => `
-                <tr class="border-b"><td class="p-6 font-bold">${e.title}</td><td class="p-6">${e.paidBy}</td><td class="p-6 font-black">₹${e.amount}</td><td class="p-6 text-right"><button onclick="db.ref('expenses').child('${e.id}').remove()" class="text-red-400"><i data-lucide="x"></i></button></td></tr>
+                <tr>
+                    <td style="font-weight:800;">${e.title}</td>
+                    <td>${e.paidBy}</td>
+                    <td style="font-weight:900; color:var(--primary);">₹${e.amount}</td>
+                    <td><span class="category-badge">${e.category}</span></td>
+                    <td style="text-align:right;"><button onclick="db.ref('expenses').child('${e.id}').remove()" style="color:#cbd5e1; border:none; background:none; cursor:pointer;"><i data-lucide="x-circle"></i></button></td>
+                </tr>
             `).join('');
             lucide.createIcons();
         };
 
-        const renderActivity = (data) => {
-            if(!data) return;
-            document.getElementById('activity-feed').innerHTML = Object.values(data).reverse().map(l => `<p class="text-sm font-medium text-slate-600">${l.text}</p>`).join('');
+        window.openMemberPrompt = async () => {
+            const n = prompt("Member Name:");
+            if(n) {
+                await db.ref('members').push({ name: n });
+                await db.ref('activityLogs').push({ text: `${n} joined the group` });
+                showToast("Member Added");
+            }
         };
 
         document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();
             const title = document.getElementById('exp-title').value;
             const amount = document.getElementById('exp-amount').value;
+            const category = document.getElementById('exp-category').value;
             const paidBy = document.getElementById('exp-payer').value;
             const participants = Array.from(document.querySelectorAll('#split-participants input:checked')).map(i => i.value);
-            await db.ref('expenses').push({ title, amount, paidBy, participants });
-            await db.ref('activityLogs').push({ text: `${paidBy} paid ₹${amount}` });
+            
+            if(participants.length === 0) return alert("Select participants!");
+            
+            await db.ref('expenses').push({ title, amount, category, paidBy, participants });
+            await db.ref('activityLogs').push({ text: `New Bill: ₹${amount} for ${title}` });
             closeModal('expenseModal');
+            e.target.reset();
+            showToast("Expense Saved");
         };
 
-        window.onload = () => { lucide.createIcons(); listen(); showSection('dashboard'); };
+        window.onload = () => { lucide.createIcons(); initSync(); };
     </script>
 </body>
 </html>
