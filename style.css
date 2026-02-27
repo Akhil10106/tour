@@ -968,3 +968,189 @@ select#exp-category {
         right: 1.5rem;
     }
 }
+
+/* --- AUTHENTICATION UI --- */
+#auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-main);
+    z-index: 5000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.auth-card {
+    background: white;
+    padding: 3rem;
+    border-radius: 40px;
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    border: 1px solid var(--border-light);
+}
+
+#google-login-btn {
+    background: white;
+    color: var(--text-main);
+    border: 2px solid var(--border);
+    margin-top: 1rem;
+    transition: 0.3s;
+}
+
+#google-login-btn:hover {
+    background: var(--bg-main);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+
+
+@media (max-width: 768px) {
+    #expenses-table, thead, tbody, th, td, tr { display: block; }
+    thead { display: none; }
+    .table-row-hover { margin-bottom: 1rem; padding: 1.5rem; position: relative; border: 1px solid var(--border-light); }
+    .table-row-hover td { padding: 8px 0 !important; display: flex; justify-content: space-between; align-items: center; }
+    .action-cell { position: absolute; top: 1.5rem; right: 1.5rem; }
+    
+    /* --- MOBILE MODAL SCROLLING UPDATE --- */
+    .modal { 
+        align-items: flex-end; 
+        padding: 0; 
+    }
+
+    .modal-content { 
+        max-width: 100%; 
+        border-radius: 35px 35px 0 0; 
+        max-height: 85vh; /* Sets height to 85% of screen */
+        padding: 2rem 1.5rem 3rem; 
+        overflow-y: auto; /* Enables scrolling */
+        -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling for iOS */
+    }
+
+    /* Option: Hide scrollbar visually on mobile but keep it working */
+    .modal-content::-webkit-scrollbar {
+        display: none; 
+    }
+    .modal-content {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+}
+
+/* --- 1. GLOBAL MODAL SCROLLBAR (Ensure it's always available) --- */
+.modal-content {
+    background: white;
+    width: 100%;
+    max-width: 550px;
+    max-height: 85vh; /* Limits height to 85% of the screen */
+    padding: 2.5rem;
+    border-radius: 40px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    
+    /* THE FIX: Enable scrolling */
+    overflow-y: auto !important; 
+    display: flex;
+    flex-direction: column;
+}
+
+/* COLORFUL SCROLLBAR FOR THE POP-UP */
+.modal-content::-webkit-scrollbar {
+    width: 6px;
+    display: block !important; /* Forces scrollbar to show */
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: var(--bg-main);
+    border-radius: 10px;
+    margin: 20px 0; /* Adds spacing at top/bottom of bar */
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(var(--primary), var(--primary-hover));
+    border-radius: 10px;
+}
+
+/* --- 2. MOBILE SPECIFIC SCROLL FIX --- */
+@media (max-width: 768px) {
+    .modal {
+        align-items: flex-end; /* Slides up from bottom */
+        padding: 0;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        border-radius: 35px 35px 0 0;
+        max-height: 90vh; /* Takes most of the screen on mobile */
+        padding: 2rem 1.5rem 4rem; /* Extra bottom padding for "Save" button */
+        
+        /* Ensure scrolling is super smooth on phones */
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch; 
+    }
+    
+    /* Keep scrollbar visible but thin on mobile */
+    .modal-content::-webkit-scrollbar {
+        width: 4px;
+    }
+}
+
+/* --- MOBILE PROFILE HEADER STYLES --- */
+@media (max-width: 1024px) {
+    .mobile-profile-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        padding: 12px 1.5rem;
+        margin: -1rem -1rem 1.5rem -1rem; /* Aligns with screen edges */
+        border-bottom: 1px solid var(--border-light);
+        position: sticky;
+        top: 0;
+        z-index: 900;
+    }
+}
+
+@media (max-width: 1024px) {
+    .mobile-profile-header {
+        display: flex !important; /* Force visibility on small screens */
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        padding: 12px 1.5rem;
+        border-bottom: 1px solid var(--border-light);
+        position: sticky;
+        top: 0;
+        z-index: 2000;
+        margin: -1.5rem -1.5rem 1.5rem -1.5rem; /* Aligns to edges */
+    }
+}
+
+/* --- CRITICAL MOBILE PROFILE FIX --- */
+@media (max-width: 1024px) {
+    .mobile-profile-header {
+        display: flex !important; /* Force display on mobile */
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        padding: 12px 1.5rem;
+        border-bottom: 1px solid var(--border-light);
+        position: sticky;
+        top: 0;
+        z-index: 2000;
+        margin: -1.5rem -1.5rem 2rem -1.5rem; /* Aligns to screen edges */
+    }
+
+    /* Ensure the mobile profile elements look premium */
+    .m-user-info { display: flex; align-items: center; gap: 12px; }
+    #user-photo-mobile { 
+        width: 38px; height: 38px; border-radius: 50%; 
+        border: 2px solid white; box-shadow: var(--shadow-sm); 
+    }
+    #user-name-mobile { font-weight: 850; font-size: 0.95rem; color: var(--text-main); }
+}
