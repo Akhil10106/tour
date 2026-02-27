@@ -1,7 +1,7 @@
 /**
- * TripSplit Premium Core Engine v5.0
- * Features: Adaptive UI, Greedy Debt Minimization, Real-time Firebase Sync
- * Architecture: Event-Driven Micro-UX
+ * TripSplit Premium Core Engine v9.0
+ * Features: Advanced Dynamic Filtering, Contextual Headers, 
+ * Premium Ledger Logic, and Smart Activity Logs.
  */
 
 // --- 1. CONFIGURATION & STATE ---
@@ -12,467 +12,352 @@ const firebaseConfig = {
     projectId: "services-6ce70",
     storageBucket: "services-6ce70.firebasestorage.app",
     messagingSenderId: "153760408547",
-    appId: "1:153760408547:web:5f61c39085dbe2f828b6d6",
-    measurementId: "G-6Z4H8X4EXL"
+    appId: "1:153760408547:web:5f61c39085dbe2f828b6d6"
 };
 
-// Global Store
 let members = [];
 let expenses = [];
-let activeSection = 'dashboard';
+let lastLogsData = []; 
+let currentFilters = { type: 'all', member: 'all' };
 
-// Initialize Firebase with safety check
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// --- 2. THE ADAPTIVE NAVIGATION ENGINE ---
+// --- 2. SMART ACTIVITY LOGGER ---
 
-/**
- * Handles seamless transitions between different app sections
- * with opacity fades and scroll resets.
- */
-window.showSection = (sectionId) => {
-    const sections = document.querySelectorAll('.section-content');
-    const navLinks = document.querySelectorAll('.nav-link, .m-nav-item');
-    
-    // 1. Exit Animation
-    sections.forEach(section => {
-        section.style.opacity = '0';
-        section.style.transform = 'translateY(10px)';
-        setTimeout(() => section.classList.add('hidden'), 200);
-    });
-
-    // 2. State Update
-    activeSection = sectionId;
-
-    // 3. Entry Animation
-    setTimeout(() => {
-        const target = document.getElementById(`${sectionId}-section`);
-        if (target) {
-            target.classList.remove('hidden');
-            // Trigger reflow
-            void target.offsetWidth; 
-            target.style.opacity = '1';
-            target.style.transform = 'translateY(0)';
-        }
-        
-        // Update Navbar Visuals
-        navLinks.forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('onclick').includes(sectionId)) {
-                link.classList.add('active');
-            }
+async function logActivity(text, type) {
+    try {
+        await db.ref('activityLogs').push({
+            text: text,
+            type: type,
+            time: Date.now()
         });
-
-        // Dynamic Title Update
-        const titleEl = document.getElementById('section-title');
-        if (titleEl) titleEl.innerText = sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
-        
-        lucide.createIcons();
-    }, 250);
-
-    // UX: Auto-scroll to top for mobile users
-    if (window.innerWidth < 1024) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+        console.error("Logging Error:", err);
     }
+}
+
+// --- 3. NAVIGATION & DYNAMIC UI ENGINE ---
+
+window.showSection = (sectionId) => {
+    // 1. Reset Visibility
+    document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('.nav-link, .m-nav-item').forEach(n => n.classList.remove('active'));
+    
+    // 2. Activate target section
+    const target = document.getElementById(`${sectionId}-section`);
+    if (target) target.classList.remove('hidden');
+    
+    // 3. Highlight Navigation
+    document.querySelectorAll(`[onclick="showSection('${sectionId}')"]`).forEach(el => el.classList.add('active'));
+    document.getElementById('section-title').innerText = sectionId.charAt(0).toUpperCase() + sectionId.slice(1);
+
+    // 4. SMART BUTTON LOGIC (Context Aware)
+    const desktopAction = document.getElementById('desktop-action-container');
+    const mobileAction = document.getElementById('mobile-action-btn');
+
+    if (sectionId === 'members') {
+        desktopAction.innerHTML = `<button class="btn btn-primary" onclick="openModal('memberModal')" style="background: var(--success);"><i data-lucide="user-plus"></i> <span>Member</span></button>`;
+        mobileAction.style.display = 'flex';
+        mobileAction.setAttribute('onclick', "openModal('memberModal')");
+        mobileAction.innerHTML = `<i data-lucide="user-plus" style="color: var(--success);"></i><span>Add</span>`;
+    } else if (sectionId === 'settlements') {
+        desktopAction.innerHTML = '';
+        mobileAction.style.display = 'none';
+        renderDetailedSettlements();
+    } else {
+        desktopAction.innerHTML = `<button class="btn btn-primary" onclick="openModal('expenseModal')"><i data-lucide="plus"></i> <span>Expense</span></button>`;
+        mobileAction.style.display = 'flex';
+        mobileAction.setAttribute('onclick', "openModal('expenseModal')");
+        mobileAction.innerHTML = `<i data-lucide="plus-circle" style="color: var(--primary);"></i><span>Add</span>`;
+    }
+    
+    lucide.createIcons();
+    if (window.innerWidth < 1024) window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// --- 3. PREMIUM UI INTERACTIONS (MODALS & TOASTS) ---
+// --- 4. PREMIUM MODAL CONTROLS ---
 
 window.openModal = (id) => {
     const modal = document.getElementById(id);
-    if (!modal) return;
-    
     modal.style.display = 'flex';
-    // Visual Entrance
-    setTimeout(() => {
-        modal.style.opacity = '1';
-        const content = modal.querySelector('.modal-content');
-        if (content) content.style.transform = 'scale(1) translateY(0)';
-    }, 10);
-
-    // Auto-focus logic for better keyboard UX
-    const focusEl = modal.querySelector('input, select');
-    if (focusEl) setTimeout(() => focusEl.focus(), 350);
+    setTimeout(() => modal.style.opacity = '1', 10);
 };
 
 window.closeModal = (id) => {
     const modal = document.getElementById(id);
-    if (!modal) return;
-
     modal.style.opacity = '0';
-    const content = modal.querySelector('.modal-content');
-    if (content) content.style.transform = 'scale(0.95) translateY(20px)';
-    
-    setTimeout(() => {
-        modal.style.display = 'none';
-    }, 300);
+    setTimeout(() => modal.style.display = 'none', 300);
 };
 
-window.showToast = (message, type = 'success') => {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    // Support for different icons based on type
-    const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'x-circle' : 'info');
-    toast.innerHTML = `<i data-lucide="${icon}" size="18"></i> <span>${message}</span>`;
-    
-    container.appendChild(toast);
-    lucide.createIcons();
+// --- 5. ADVANCED FILTER & ACTIVITY FEED ---
 
-    // Auto-remove with exit animation
-    setTimeout(() => {
-        toast.style.transform = 'translateX(120%)';
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 400);
-    }, 3500);
+window.toggleFilter = () => {
+    const panel = document.getElementById('filter-panel');
+    const trigger = document.getElementById('filter-trigger');
+    const isHidden = panel.classList.toggle('hidden');
+    trigger.classList.toggle('active-filter', !isHidden);
 };
 
-// --- 4. FINANCIAL CORE: THE CALCULATION ENGINE ---
+window.applyFilters = () => {
+    currentFilters.type = document.getElementById('filter-type').value;
+    currentFilters.member = document.getElementById('filter-member').value;
+    renderActivityFeed(); 
+};
 
-/**
- * Orchestrates the entire balance calculation.
- * Uses a greedy debt minimization algorithm to simplify transactions.
- */
-function processFinancials() {
-    let totalTripSpent = 0;
-    const netBalances = {}; 
-    const outOfPocket = {}; 
+function renderActivityFeed(snap) {
+    const feed = document.getElementById('activity-feed');
+    if (!feed) return;
 
-    // Initialize person-specific maps
-    members.forEach(m => {
-        netBalances[m.name] = 0;
-        outOfPocket[m.name] = 0;
+    const data = snap ? (snap.val() ? Object.values(snap.val()).reverse() : []) : lastLogsData;
+    lastLogsData = data; 
+
+    const filteredLogs = data.filter(log => {
+        const matchesType = currentFilters.type === 'all' || log.type === currentFilters.type;
+        const matchesMember = currentFilters.member === 'all' || log.text.includes(currentFilters.member);
+        return matchesType && matchesMember;
     });
 
-    // Aggregate all expenses
-    expenses.forEach(exp => {
-        const amount = parseFloat(exp.amount);
-        if (isNaN(amount)) return;
-
-        totalTripSpent += amount;
-        outOfPocket[exp.paidBy] = (outOfPocket[exp.paidBy] || 0) + amount;
-
-        const share = amount / (exp.participants?.length || 1);
-        
-        // Payer is owed the full amount
-        if (netBalances.hasOwnProperty(exp.paidBy)) {
-            netBalances[exp.paidBy] += amount;
-        }
-
-        // Every participant owes their share
-        exp.participants.forEach(p => {
-            if (netBalances.hasOwnProperty(p)) {
-                netBalances[p] -= share;
-            }
-        });
-    });
-
-    // Update Dashboard Metrics
-    animateCounter('total-expense-val', totalTripSpent);
-    
-    const topPayer = Object.keys(outOfPocket).reduce((a, b) => 
-        (outOfPocket[a] > outOfPocket[b]) ? a : b, '---');
-    
-    const topPayerEl = document.getElementById('top-payer-val');
-    if (topPayerEl) topPayerEl.innerText = topPayer === '---' ? 'None' : topPayer;
-
-    renderSettlements(netBalances);
-}
-
-/**
- * DEBT MINIMIZATION ALGORITHM
- * Reduces the number of payments needed to settle the trip.
- */
-function renderSettlements(netBalances) {
-    const list = document.getElementById('settlement-list');
-    if (!list) return;
-
-    const debtors = [], creditors = [];
-    
-    Object.entries(netBalances).forEach(([name, balance]) => {
-        if (balance < -0.99) debtors.push({ name, amount: Math.abs(balance) });
-        else if (balance > 0.99) creditors.push({ name, amount: balance });
-    });
-
-    // Sort descending to settle largest amounts first
-    debtors.sort((a, b) => b.amount - a.amount);
-    creditors.sort((a, b) => b.amount - a.amount);
-
-    let html = '';
-    let count = 0;
-    let i = 0, j = 0;
-
-    
-
-    while (i < debtors.length && j < creditors.length) {
-        const settleAmount = Math.min(debtors[i].amount, creditors[j].amount);
-        
-        html += `
-            <div class="settle-item animate-in">
-                <div class="settle-names">
-                    <span class="debtor">${debtors[i].name}</span>
-                    <i data-lucide="chevron-right" size="14"></i>
-                    <span class="creditor">${creditors[j].name}</span>
-                </div>
-                <div class="amount-tag">₹${Math.round(settleAmount).toLocaleString('en-IN')}</div>
-            </div>`;
-        
-        debtors[i].amount -= settleAmount;
-        creditors[j].amount -= settleAmount;
-
-        if (debtors[i].amount < 1) i++;
-        if (creditors[j].amount < 1) j++;
-        count++;
+    if (filteredLogs.length === 0) {
+        feed.innerHTML = `<div style="padding: 2rem; text-align:center; color: var(--text-light); font-size: 0.8rem;">No activity matching filters</div>`;
+        return;
     }
 
-    list.innerHTML = html || `<div class="empty-state">
-        <i data-lucide="sun" size="32"></i>
-        <p>Everything is settled!</p>
-    </div>`;
+    feed.innerHTML = filteredLogs.map(l => {
+        let icon = 'bell', typeClass = 'act-join';
+        if (l.type === 'expense') { icon = 'shopping-bag'; typeClass = 'act-expense'; }
+        else if (l.type === 'settle') { icon = 'check-circle'; typeClass = 'act-settle'; }
+        else if (l.type === 'join') { icon = 'user-plus'; typeClass = 'act-join'; }
 
-    const debtCountEl = document.getElementById('pending-settle-val');
-    if (debtCountEl) debtCountEl.innerText = count;
-    
+        const timeStr = new Date(l.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        return `
+            <div class="activity-card-mini ${typeClass} animate-in">
+                <div class="activity-icon"><i data-lucide="${icon}" size="14"></i></div>
+                <div class="activity-info">
+                    <span class="activity-text">${l.text}</span>
+                    <span class="activity-time">${timeStr}</span>
+                </div>
+            </div>`;
+    }).join('');
     lucide.createIcons();
 }
 
-// --- 5. REAL-TIME DATA SYNCHRONIZATION ---
+// --- 6. DATA SYNC & UI REFRESH ---
 
 function startRealTimeSync() {
-    // Sync Members
     db.ref('members').on('value', snap => {
-        const val = snap.val();
-        members = val ? Object.entries(val).map(([id, v]) => ({ id, ...v })) : [];
-        syncInternalUI();
+        members = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
+        refreshUI();
+        updateFilterDropdowns();
     });
 
-    // Sync Expenses
     db.ref('expenses').on('value', snap => {
-        const val = snap.val();
-        expenses = val ? Object.entries(val).map(([id, v]) => ({ id, ...v })) : [];
-        syncInternalUI();
+        expenses = snap.val() ? Object.entries(snap.val()).map(([id, v]) => ({ id, ...v })) : [];
+        refreshUI();
     });
 
-    // Sync Activity Log
-    db.ref('activityLogs').limitToLast(12).on('value', snap => {
-        const feed = document.getElementById('activity-feed');
-        if (!feed) return;
-        const data = snap.val() ? Object.values(snap.val()).reverse() : [];
-        
-        feed.innerHTML = data.map(log => `
-            <div class="activity-node">
-                <div class="node-content">
-                    <p class="node-text">${log.text}</p>
-                    <span class="node-time">${new Date(log.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                </div>
-            </div>
-        `).join('');
+    db.ref('activityLogs').limitToLast(30).on('value', snap => {
+        renderActivityFeed(snap);
     });
 }
 
-function syncInternalUI() {
-    // 1. Update Input Selections
+function refreshUI() {
+    // Populate dropdowns
     const payerSelect = document.getElementById('exp-payer');
-    const splitContainer = document.getElementById('split-participants');
-    
-    if (payerSelect) {
-        payerSelect.innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
-    }
+    if (payerSelect) payerSelect.innerHTML = members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
 
-    if (splitContainer) {
-        splitContainer.innerHTML = members.map(m => `
-            <label class="custom-checkbox">
-                <input type="checkbox" value="${m.name}" checked>
-                <div class="checkbox-tile">
-                    <span>${m.name}</span>
-                </div>
-            </label>
-        `).join('');
-    }
+    const splitBox = document.getElementById('split-participants');
+    if (splitBox) splitBox.innerHTML = members.map(m => `
+        <label><input type="checkbox" value="${m.name}" checked> <span>${m.name}</span></label>
+    `).join('');
 
-    // 2. Refresh Calculations
-    processFinancials();
-
-    // 3. Render Lists
     renderExpensesTable();
     renderMembersGrid();
+    
+    // Stats Update
+    const totalSpent = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    document.getElementById('total-expense-val').innerText = `₹${totalSpent.toLocaleString('en-IN')}`;
+    document.getElementById('pending-settle-val').innerText = expenses.length;
 }
 
-// --- 6. TABLE & LIST RENDERING ---
+function updateFilterDropdowns() {
+    const memberSelect = document.getElementById('filter-member');
+    if (!memberSelect) return;
+    const currentVal = memberSelect.value;
+    memberSelect.innerHTML = `<option value="all">Everyone</option>` + members.map(m => `<option value="${m.name}">${m.name}</option>`).join('');
+    memberSelect.value = currentVal;
+}
+
+// --- 7. PREMIUM EXPENSES TABLE (Adaptive Micro-Cards) ---
 
 function renderExpensesTable() {
     const tbody = document.getElementById('expenses-tbody');
     if (!tbody) return;
 
     if (expenses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-table">No expenses found for this trip.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:3rem; color:var(--text-light);">No trip expenses recorded.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = expenses.map(e => `
+    tbody.innerHTML = expenses.map(e => {
+        let catIcon = 'package';
+        if (e.category === 'Food') catIcon = 'utensils';
+        else if (e.category === 'Travel') catIcon = 'car';
+        else if (e.category === 'Stay') catIcon = 'home';
+        else if (e.category === 'Others') catIcon = 'layers';
+
+        const dateStr = new Date(e.time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+
+        return `
         <tr class="table-row-hover">
             <td>
                 <div class="bill-info">
                     <span class="bill-title">${e.title}</span>
-                    <span class="bill-date">${new Date(e.time || Date.now()).toLocaleDateString()}</span>
+                    <span class="bill-date"><i data-lucide="calendar" size="12"></i> ${dateStr}</span>
                 </div>
             </td>
-            <td class="hide-mobile">${e.paidBy}</td>
-            <td class="bill-amount">₹${parseFloat(e.amount).toLocaleString('en-IN')}</td>
-            <td><span class="badge badge-${e.category?.toLowerCase() || 'misc'}">${e.category}</span></td>
+            <td class="hide-mobile">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div class="member-avatar" style="width:28px; height:28px; font-size:0.7rem;">${e.paidBy[0]}</div>
+                    <span style="font-weight:700;">${e.paidBy}</span>
+                </div>
+            </td>
+            <td><span class="bill-amount">₹${parseFloat(e.amount).toLocaleString('en-IN')}</span></td>
+            <td><span class="badge badge-${e.category?.toLowerCase() || 'others'}"><i data-lucide="${catIcon}" size="12"></i> ${e.category}</span></td>
             <td class="action-cell">
-                <button class="icon-btn delete" onclick="triggerDelete('expenses', '${e.id}', '${e.title}')">
+                <button class="btn" style="color:var(--danger); background: var(--danger-soft); border-radius:12px; padding:10px;" 
+                        onclick="triggerDelete('expenses', '${e.id}', '${e.title}')">
                     <i data-lucide="trash-2" size="18"></i>
                 </button>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
     lucide.createIcons();
 }
+
+// --- 8. SMART MEMBERS GRID (Adaptive 2-to-1 Layout) ---
 
 function renderMembersGrid() {
     const grid = document.getElementById('members-grid');
     if (!grid) return;
-
-    grid.innerHTML = members.map(m => `
-        <div class="stat-card member-card animate-in">
-            <div class="member-profile">
-                <div class="member-avatar">${m.name[0].toUpperCase()}</div>
-                <div class="member-meta">
-                    <span class="member-name">${m.name}</span>
-                    <span class="member-role">Traveler</span>
-                </div>
+    
+    let html = members.map(m => `
+        <div class="stat-card member-card animate-in" onclick="openUserProfile('${m.name}')">
+            <div class="member-profile-btn">
+                <div class="member-avatar">${m.name[0]}</div>
+                <div><div style="font-weight:800">${m.name}</div><div style="font-size:0.7rem; color:var(--text-muted)">View Ledger</div></div>
             </div>
-            <button class="icon-btn delete" onclick="triggerDelete('members', '${m.id}', '${m.name}')">
-                <i data-lucide="user-minus" size="18"></i>
-            </button>
-        </div>
-    `).join('');
+            <button class="btn" onclick="event.stopPropagation(); triggerDelete('members', '${m.id}', '${m.name}')"><i data-lucide="user-minus" size="16"></i></button>
+        </div>`).join('');
+    
+    html += `<div class="stat-card mobile-add-member" onclick="openModal('memberModal')" style="cursor: pointer; background: #f0fdf4; border: 2px dashed #bbf7d0;">
+            <p class="stat-label" style="color: #16a34a;">Add Friend</p><div class="stat-value" style="color: #16a34a;"><i data-lucide="user-plus"></i></div></div>`;
+    
+    grid.innerHTML = html;
     lucide.createIcons();
 }
 
-// --- 7. DATABASE MODIFICATION HANDLERS ---
-
-window.openMemberPrompt = () => {
-    const input = document.getElementById('new-member-name');
-    if (input) input.value = '';
-    openModal('memberModal');
-};
-
-window.submitNewMember = async () => {
-    const nameInput = document.getElementById('new-member-name');
-    const name = nameInput.value.trim();
-
-    if (!name) {
-        showToast("Please enter a valid name", "error");
-        return;
-    }
-
-    try {
-        const newRef = db.ref('members').push();
-        await newRef.set({ name, joinedAt: Date.now() });
-        
-        await db.ref('activityLogs').push({
-            text: `👋 ${name} was added to the trip`,
-            time: Date.now()
-        });
-
-        closeModal('memberModal');
-        showToast(`${name} added successfully!`);
-    } catch (err) {
-        showToast("Sync failed. Check connection.", "error");
-    }
-};
+// --- 9. CORE ACTIONS (FORM SUBMISSIONS) ---
 
 document.getElementById('expense-form').onsubmit = async (e) => {
     e.preventDefault();
-    
     const title = document.getElementById('exp-title').value;
     const amount = document.getElementById('exp-amount').value;
     const paidBy = document.getElementById('exp-payer').value;
     const category = document.getElementById('exp-category').value;
     const participants = Array.from(document.querySelectorAll('#split-participants input:checked')).map(i => i.value);
 
-    if (participants.length === 0) {
-        showToast("Select at least one participant", "error");
-        return;
+    if (participants.length === 0) return alert("Select at least one participant!");
+
+    await db.ref('expenses').push({ title, amount, paidBy, category, participants, time: Date.now() });
+    logActivity(`${paidBy} paid ₹${amount} for ${title}`, 'expense');
+    
+    closeModal('expenseModal');
+    e.target.reset();
+};
+
+window.submitNewMember = async () => {
+    const input = document.getElementById('new-member-name');
+    const name = input.value.trim();
+    if (!name) return;
+    await db.ref('members').push({ name });
+    logActivity(`${name} joined the trip`, 'join');
+    input.value = '';
+    closeModal('memberModal');
+};
+
+// --- 10. SETTLEMENTS & PROFILE VIEWS ---
+
+window.settleSpecificDebt = async (expenseId, person, title) => {
+    if (confirm(`Mark ${person}'s share for "${title}" as paid?`)) {
+        const expRef = db.ref('expenses').child(expenseId);
+        const snap = await expRef.once('value');
+        const exp = snap.val();
+        const newParticipants = exp.participants.filter(p => p !== person);
+        
+        if (newParticipants.length === 0) await expRef.remove();
+        else await expRef.update({ participants: newParticipants });
+
+        logActivity(`${person} settled for ${title}`, 'settle');
+        if (!document.getElementById('settlements-section').classList.contains('hidden')) renderDetailedSettlements();
     }
+};
 
-    try {
-        await db.ref('expenses').push({
-            title, amount, paidBy, category, participants, time: Date.now()
+function renderDetailedSettlements() {
+    const container = document.getElementById('detailed-settlement-view');
+    if (!container) return;
+    let html = '';
+    expenses.forEach(exp => {
+        const share = parseFloat(exp.amount) / (exp.participants?.length || 1);
+        exp.participants.forEach(person => {
+            if (person !== exp.paidBy) {
+                html += `
+                <div class="activity-card animate-in">
+                    <div class="activity-header"><span class="activity-title">${exp.title}</span><span class="activity-amount">₹${Math.round(share)}</span></div>
+                    <div class="debt-line"><div class="debt-info"><strong>${person}</strong> owes <strong>${exp.paidBy}</strong></div>
+                    <button class="btn" style="background: var(--success-soft); color: var(--success); padding: 6px 12px; font-size: 0.7rem;" onclick="settleSpecificDebt('${exp.id}', '${person}', '${exp.title}')">Mark Paid</button></div>
+                </div>`;
+            }
         });
+    });
+    container.innerHTML = html || `<div class="activity-card">Everything is settled! ☀️</div>`;
+    lucide.createIcons();
+}
 
-        await db.ref('activityLogs').push({
-            text: `💰 ${paidBy} paid ₹${amount} for ${title}`,
-            time: Date.now()
-        });
+window.openUserProfile = (name) => {
+    const historyList = document.getElementById('user-transaction-history');
+    const header = document.getElementById('user-profile-header');
+    let toPay = 0, toReceive = 0, historyHtml = '';
+    
+    expenses.forEach(exp => {
+        const share = parseFloat(exp.amount) / exp.participants.length;
+        if (exp.paidBy === name) {
+            const othersShare = parseFloat(exp.amount) - share;
+            toReceive += othersShare;
+            historyHtml += `<div class="activity-node" style="border-left-color: var(--success)"><b>${exp.title}:</b> Getting back ₹${Math.round(othersShare)}.</div>`;
+        } else if (exp.participants.includes(name)) {
+            toPay += share;
+            historyHtml += `<div class="activity-node" style="border-left-color: var(--danger)"><b>${exp.title}:</b> You owe ${exp.paidBy} ₹${Math.round(share)}.</div>`;
+        }
+    });
 
-        closeModal('expenseModal');
-        e.target.reset();
-        showToast("Expense recorded!");
-    } catch (err) {
-        showToast("Error saving expense", "error");
+    header.innerHTML = `<h2 style="font-weight:900; font-size: 2rem;">${name}</h2><div style="display:flex; gap:10px; margin-top:10px;"><div class="badge badge-success">Receive: ₹${Math.round(toReceive)}</div><div class="badge" style="background:#fee2e2; color:#ef4444">Owe: ₹${Math.round(toPay)}</div></div>`;
+    historyList.innerHTML = historyHtml || "<p>No active history.</p>";
+    openModal('userProfileModal');
+};
+
+// --- 11. DANGER ZONE ---
+
+window.triggerFullReset = () => {
+    if (confirm("DANGER: This will delete the entire trip data. Are you sure?")) {
+        db.ref('/').remove();
+        location.reload();
     }
 };
 
 window.triggerDelete = (path, id, label) => {
-    const modal = document.getElementById('custom-confirm-modal');
-    const msg = document.getElementById('confirm-message');
-    msg.innerText = `Are you sure you want to remove "${label}"? This cannot be undone.`;
-    
-    modal.style.display = 'flex';
-    
-    document.getElementById('confirm-proceed').onclick = async () => {
-        await db.ref(path).child(id).remove();
-        modal.style.display = 'none';
-        showToast("Item deleted", "success");
-    };
-    
-    document.getElementById('confirm-cancel').onclick = () => {
-        modal.style.display = 'none';
-    };
+    if (confirm(`Delete ${label}?`)) db.ref(path).child(id).remove();
 };
 
-// --- 8. UTILITIES & STARTUP ---
-
-function animateCounter(id, target) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    
-    const startValue = parseInt(el.innerText.replace(/\D/g, '')) || 0;
-    const duration = 1000;
-    const startTime = performance.now();
-
-    function update(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function for smooth stop
-        const easeOut = 1 - Math.pow(1 - progress, 3);
-        const current = Math.floor(easeOut * (target - startValue) + startValue);
-        
-        el.innerText = `₹${current.toLocaleString('en-IN')}`;
-        
-        if (progress < 1) {
-            requestAnimationFrame(update);
-        }
-    }
-    requestAnimationFrame(update);
-}
-
-// Global Startup
-window.onload = () => {
-    lucide.createIcons();
-    startRealTimeSync();
-    
-    // Default Start Section
-    showSection('dashboard');
-    
-    // Console Welcome for Developers
-    console.log("%c TripSplit Premium v5.0 Loaded ", "background: #2563eb; color: white; padding: 5px; border-radius: 5px;");
-};
+window.onload = () => { startRealTimeSync(); showSection('dashboard'); };
