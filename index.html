@@ -8,10 +8,24 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <div class="logo-box" style="margin: 0 auto 1.5rem;"><i data-lucide="plane"></i></div>
+            <h2 style="font-weight: 900; margin-bottom: 0.5rem;">Welcome to TripSplit</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem;">Sign in to manage the Katra Trip 2026</p>
+            
+            <button class="btn" id="google-login-btn" style="width: 100%; justify-content: center; gap: 15px; border: 2px solid var(--border); background: white;">
+                <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+                Continue with Google
+            </button>
+        </div>
+    </div>
 
     <div id="toast-container"></div>
 
@@ -20,6 +34,15 @@
             <div class="logo-box"><i data-lucide="plane"></i></div> 
             <span>TripSplit</span>
         </div>
+
+        <div id="user-info-sidebar" style="margin-bottom: 2rem; padding: 12px; background: var(--bg-main); border-radius: 24px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-light);">
+            <img id="user-photo" src="" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid white; box-shadow: var(--shadow-sm);">
+            <div style="overflow: hidden;">
+                <p id="user-name" style="font-weight: 800; font-size: 0.85rem; white-space: nowrap; text-overflow: ellipsis; color: var(--text-main);"></p>
+                <button onclick="handleLogout()" style="border:none; background:none; color:var(--danger); font-size: 0.7rem; font-weight: 700; cursor:pointer; padding:0;">Sign Out</button>
+            </div>
+        </div>
+
         <nav>
             <button class="nav-link active" onclick="showSection('dashboard')">
                 <i data-lucide="layout-grid"></i> Dashboard
@@ -27,11 +50,11 @@
             <button class="nav-link" onclick="showSection('expenses')">
                 <i data-lucide="receipt"></i> Expenses
             </button>
-            <button class="nav-link" onclick="showSection('settlements')">
-                <i data-lucide="hand-coins"></i> Settlements
-            </button>
             <button class="nav-link" onclick="showSection('members')">
                 <i data-lucide="users"></i> Members
+            </button>
+            <button class="nav-link" onclick="showSection('settlements')">
+                <i data-lucide="hand-coins"></i> Settlements
             </button>
         </nav>
         
@@ -55,7 +78,7 @@
         <button class="m-nav-item" onclick="showSection('settlements')">
             <i data-lucide="hand-coins"></i><span>Settle</span>
         </button>
-        <button class="m-nav-item" id="mobile-action-btn">
+        <button class="m-nav-item" id="mobile-action-btn" onclick="openModal('expenseModal')">
             <i data-lucide="plus-circle" style="color: var(--primary);"></i><span>Add</span>
         </button>
     </nav>
@@ -67,68 +90,52 @@
                 <p id="trip-subtitle" style="color: var(--text-muted); font-weight: 600; font-size: 0.9rem;">Katra Trip 2026</p>
             </div>
             <div class="header-actions" id="desktop-action-container">
-                <button class="btn btn-primary" onclick="openModal('expenseModal')">
-                    <i data-lucide="plus"></i> 
-                    <span>Expense</span>
-                </button>
-            </div>
+                </div>
         </header>
 
         <section id="dashboard-section" class="section-content">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <p class="stat-label">Total Spent</p>
+                    <p class="stat-label">Spent</p>
                     <div class="stat-value" id="total-expense-val" style="color: var(--primary);">₹0</div>
-                </div>
-                <div class="stat-card">
-                    <p class="stat-label">Top Payer</p>
-                    <div class="stat-value" id="top-payer-val">---</div>
                 </div>
                 <div class="stat-card">
                     <p class="stat-label">Active Debts</p>
                     <div class="stat-value" id="pending-settle-val">0</div>
                 </div>
-                <div class="stat-card mobile-add-member" onclick="showSection('members')" style="cursor: pointer; background: #f0fdf4; border-color: #bbf7d0;">
-                    <p class="stat-label" style="color: #16a34a;">Group</p>
-                    <div class="stat-value" style="color: #16a34a;"><i data-lucide="users"></i></div>
+                <div class="stat-card" onclick="showSection('members')" style="cursor:pointer; background: var(--primary-soft); border-color: #bfdbfe;">
+                    <p class="stat-label" style="color: var(--primary);">Group</p>
+                    <div class="stat-value" style="color: var(--primary);"><i data-lucide="users"></i></div>
                 </div>
             </div>
 
             <div class="dashboard-grid">
                 <div class="panel">
-                    <div class="panel-title">
-                        <i data-lucide="zap" style="color: #f59e0b;"></i> Smart Settlements
-                    </div>
+                    <div class="panel-title"><i data-lucide="zap" style="color: #f59e0b;"></i> Quick Settle</div>
                     <div id="settlement-list"></div>
                 </div>
 
                 <div class="panel hide-small">
-                    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem;">
-                        <div class="panel-title" style="margin-bottom: 0;">
-                            <i data-lucide="activity"></i> Recent Activity
-                        </div>
+                    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <div class="panel-title" style="margin-bottom: 0;"><i data-lucide="activity"></i> Recent Activity</div>
                         
                         <div class="filter-wrapper" style="position: relative;">
-                            <button class="btn btn-white" onclick="toggleFilter()" id="filter-trigger" style="padding: 8px 12px;">
-                                <i data-lucide="filter" size="18"></i>
-                                <span>Filter</span>
+                            <button class="btn btn-white" onclick="toggleFilter()" id="filter-trigger" style="padding: 8px 12px; font-size: 0.8rem;">
+                                <i data-lucide="filter" size="14"></i> <span>Filter</span>
                             </button>
-                            
                             <div id="filter-panel" class="filter-panel hidden">
                                 <div class="filter-group">
-                                    <label>Activity Type</label>
+                                    <label>Type</label>
                                     <select id="filter-type" onchange="applyFilters()">
-                                        <option value="all">All Activities</option>
-                                        <option value="expense">Expenses Only</option>
-                                        <option value="join">New Members</option>
+                                        <option value="all">All</option>
+                                        <option value="expense">Expenses</option>
+                                        <option value="join">Members</option>
                                         <option value="settle">Settlements</option>
                                     </select>
                                 </div>
                                 <div class="filter-group">
-                                    <label>By Member</label>
-                                    <select id="filter-member" onchange="applyFilters()">
-                                        <option value="all">Everyone</option>
-                                        </select>
+                                    <label>Member</label>
+                                    <select id="filter-member" onchange="applyFilters()"><option value="all">Everyone</option></select>
                                 </div>
                             </div>
                         </div>
@@ -143,7 +150,7 @@
                 <table id="expenses-table">
                     <thead>
                         <tr>
-                            <th>Bill Detail</th>
+                            <th>Detail</th>
                             <th class="hide-mobile">Payer</th>
                             <th>Amount</th>
                             <th>Category</th>
@@ -155,30 +162,25 @@
             </div>
         </section>
 
-        <section id="settlements-section" class="section-content hidden">
-            <div class="panel">
-                <div class="panel-title">
-                    <i data-lucide="split" style="color: var(--primary);"></i> Transaction Breakdown
-                </div>
-                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem;">
-                    Every specific item spent and who owes whom for that specific activity.
-                </p>
-                <div id="detailed-settlement-view" class="detailed-grid"></div>
-            </div>
+        <section id="members-section" class="section-content hidden">
+            <div id="members-grid"></div>
         </section>
 
-        <section id="members-section" class="section-content hidden">
-            <div class="stats-grid" id="members-grid"></div>
+        <section id="settlements-section" class="section-content hidden">
+            <div class="panel">
+                <div class="panel-title"><i data-lucide="split" style="color: var(--primary);"></i> Transaction Breakdown</div>
+                <div id="detailed-settlement-view" class="detailed-grid"></div>
+            </div>
         </section>
     </main>
 
     <div class="modal" id="expenseModal">
         <div class="modal-content">
-            <div class="modal-handle"></div> 
+            <div class="modal-handle"></div>
             <h2 style="font-weight: 900; margin-bottom: 1.5rem;">Record Spending</h2>
             <form id="expense-form">
                 <div class="input-group">
-                    <label>What was bought?</label>
+                    <label>Description</label>
                     <input type="text" id="exp-title" placeholder="e.g., Dinner at Katra" required>
                 </div>
                 <div class="input-row">
@@ -197,11 +199,11 @@
                     </div>
                 </div>
                 <div class="input-group">
-                    <label>Who paid the money?</label>
+                    <label>Who Paid?</label>
                     <select id="exp-payer"></select>
                 </div>
                 <div class="input-group">
-                    <label>For whom (Split between)</label>
+                    <label>Split Between</label>
                     <div id="split-participants" class="checkbox-grid"></div>
                 </div>
                 <div class="modal-btns">
@@ -217,7 +219,7 @@
             <div class="modal-handle"></div>
             <div id="user-profile-header"></div>
             <div class="tab-container" style="margin-top: 1.5rem;">
-                <p class="stat-label">Personal Ledger</p>
+                <p class="stat-label">Transaction History</p>
                 <div id="user-transaction-history" class="history-list"></div>
             </div>
             <div class="modal-btns">
