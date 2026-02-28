@@ -35,11 +35,11 @@
             <span>TripSplit</span>
         </div>
 
-        <div id="user-info-sidebar" style="margin-bottom: 2rem; padding: 12px; background: var(--bg-main); border-radius: 24px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-light);">
+        <div id="user-info-sidebar" style="margin-bottom: 2rem; padding: 12px; background: var(--bg-main); border-radius: 24px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border-light); cursor: pointer;" onclick="showSection('profile')">
             <img id="user-photo" src="" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid white; box-shadow: var(--shadow-sm);">
             <div style="overflow: hidden;">
                 <p id="user-name" style="font-weight: 800; font-size: 0.85rem; white-space: nowrap; text-overflow: ellipsis; color: var(--text-main);"></p>
-                <button onclick="handleLogout()" style="border:none; background:none; color:var(--danger); font-size: 0.7rem; font-weight: 700; cursor:pointer; padding:0;">Sign Out</button>
+                <p style="color: var(--primary); font-size: 0.65rem; font-weight: 700; margin-top: 2px;">View Profile</p>
             </div>
         </div>
 
@@ -84,13 +84,20 @@
     </nav>
 
     <main class="main-content">
+        <div class="mobile-profile-header" style="display: none;" onclick="showSection('profile')">
+            <div class="m-user-info" style="display: flex; align-items: center; gap: 10px;">
+                <img id="user-photo-mobile" src="" style="width: 35px; height: 35px; border-radius: 50%;">
+                <span id="user-name-mobile" style="font-weight: 850; font-size: 0.9rem;"></span>
+            </div>
+            <i data-lucide="chevron-right" size="18" style="color: var(--text-light);"></i>
+        </div>
+
         <header class="header">
             <div class="header-text">
                 <h1 id="section-title">Dashboard</h1>
                 <p id="trip-subtitle" style="color: var(--text-muted); font-weight: 600; font-size: 0.9rem;">Katra Trip 2026</p>
             </div>
-            <div class="header-actions" id="desktop-action-container">
-                </div>
+            <div class="header-actions" id="desktop-action-container"></div>
         </header>
 
         <section id="dashboard-section" class="section-content">
@@ -118,7 +125,6 @@
                 <div class="panel hide-small">
                     <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                         <div class="panel-title" style="margin-bottom: 0;"><i data-lucide="activity"></i> Recent Activity</div>
-                        
                         <div class="filter-wrapper" style="position: relative;">
                             <button class="btn btn-white" onclick="toggleFilter()" id="filter-trigger" style="padding: 8px 12px; font-size: 0.8rem;">
                                 <i data-lucide="filter" size="14"></i> <span>Filter</span>
@@ -141,6 +147,54 @@
                         </div>
                     </div>
                     <div id="activity-feed"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="profile-section" class="section-content hidden">
+            <div class="profile-container">
+                <div class="profile-hero">
+                    <div class="profile-avatar-wrapper">
+                        <img id="main-profile-photo" src="" alt="Profile">
+                        <div class="online-indicator"></div>
+                    </div>
+                    <div class="profile-meta">
+                        <h2 id="main-profile-name">User Name</h2>
+                        <p id="main-profile-email">email@example.com</p>
+                        <div class="admin-badge hidden" id="admin-badge">Trip Admin</div>
+                    </div>
+                    <button onclick="handleLogout()" class="btn-signout-main">
+                        <i data-lucide="log-out"></i> Sign Out
+                    </button>
+                </div>
+
+                <div class="profile-stats-grid">
+                    <div class="p-stat-card">
+                        <div class="p-icon" style="background: var(--success-soft); color: var(--success);"><i data-lucide="trending-up"></i></div>
+                        <div class="p-info">
+                            <span class="p-label">Total Lent</span>
+                            <div class="p-val" id="profile-lent-val">₹0</div>
+                        </div>
+                    </div>
+                    <div class="p-stat-card">
+                        <div class="p-icon" style="background: var(--danger-soft); color: var(--danger);"><i data-lucide="trending-down"></i></div>
+                        <div class="p-info">
+                            <span class="p-label">Total Owed</span>
+                            <div class="p-val" id="profile-owed-val">₹0</div>
+                        </div>
+                    </div>
+                    <div class="p-stat-card">
+                        <div class="p-icon" style="background: var(--primary-soft); color: var(--primary);"><i data-lucide="wallet"></i></div>
+                        <div class="p-info">
+                            <span class="p-label">Net Balance</span>
+                            <div class="p-val" id="profile-balance-val">₹0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 2rem;">
+                    <div class="panel-title"><i data-lucide="list-checks"></i> Personal Ledger</div>
+                    <div id="personal-ledger-list" class="detailed-grid"></div>
                 </div>
             </div>
         </section>
@@ -170,6 +224,13 @@
             <div class="panel">
                 <div class="panel-title"><i data-lucide="split" style="color: var(--primary);"></i> Transaction Breakdown</div>
                 <div id="detailed-settlement-view" class="detailed-grid"></div>
+            </div>
+
+            <div class="panel" style="margin-top: 2rem; border-top: 4px solid var(--success);">
+                <div class="panel-title"><i data-lucide="history" style="color: var(--success);"></i> Settlement History</div>
+                <div id="settled-history-view" class="history-list">
+                    <p style="text-align: center; color: var(--text-light); padding: 1rem;">No completed settlements yet.</p>
+                </div>
             </div>
         </section>
     </main>
@@ -223,7 +284,7 @@
                 <div id="user-transaction-history" class="history-list"></div>
             </div>
             <div class="modal-btns">
-                <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="closeModal('userProfileModal')">Close Profile</button>
+                <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="closeModal('userProfileModal')">Close View</button>
             </div>
         </div>
     </div>
